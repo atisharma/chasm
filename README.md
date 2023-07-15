@@ -39,11 +39,11 @@ with a good model.
 
 ### Running the client
 
-Check your setting in config.toml and invoke from inside a terminal, so
+Check your settings in `client.toml` and invoke from inside a terminal, so
 ```bash
 $ chasm
 ```
-will connect to the default server with the character name set in the config.
+will connect to the default server with the character name set in the `client.toml` config.
 
 ```toml
 name = "Hero"
