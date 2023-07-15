@@ -1,4 +1,4 @@
-# Chasm - CHAracter State Manager
+# Chasm - CHAracter State Manager (game client)
 
 Chasm is a ***generative text adventure game*** in a ***world you
 specify***. It uses generative artificial intelligence to generate
@@ -6,7 +6,7 @@ scenes and characters as you play. Unlike simply role-playing with a
 chatbot, important state persists (locations, characters, dialogue
 etc.)
 
-**This is the client software that connects to a server**
+**This is the client software that connects to a server.**
 
 Chasm is still being written. It's already pretty great though,
 with a good model.
