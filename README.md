@@ -60,14 +60,14 @@ name is Hero) with the contents
 ```json
 {
     "name": "Hero",
-    "appearance": "Heroic.",
-    "gender": "male",
-    "backstory": "Comes from a long line of heroes.",
-    "voice": "Heroic.",
-    "traits": "Heroism.",
-    "likes": "Being heroic.",
-    "dislikes": "Not being heroic.",
-    "motivation": "To be heroic."
+    "appearance": "Heroic",
+    "gender": "Hero's gender",
+    "backstory": "Comes from a long line of heroes; heroic from an early age.",
+    "voice": "Heroic",
+    "traits": "Heroism",
+    "likes": "Being heroic",
+    "dislikes": "Not being heroic",
+    "motivation": "To be heroic"
 }
 ```
 reflecting the desired values. Leave out fields and they'll be automatically generated. The `name` field is ignored (since it's implicit in the filename).
