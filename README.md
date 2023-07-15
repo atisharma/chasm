@@ -46,7 +46,7 @@ $ chasm
 will connect to the default server with the character name set in the config.
 
 ```toml
-name = Hero
+name = "Hero"
 world = "default world"
 chasm_server = "chasm.quest:1976"
 loglevel = "info"
