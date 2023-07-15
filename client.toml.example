@@ -1,0 +1,4 @@
+name = "Hero"
+world = "default world"
+server = "tcp://localhost:25566"
+loglevel = "warning"
