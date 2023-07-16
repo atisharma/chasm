@@ -1,25 +1,36 @@
 (require hyrule [unless])
 
 (import json)
-(import zmq [Context REQ POLLIN])
+(import zmq)
 
+(import chasm-client.lib [config])
 (import chasm-client.wire [wrap unwrap])
 
 
-(setv REQUEST_TIMEOUT 20000) ; ms
+(setv REQUEST_TIMEOUT 120 ; seconds
+      context (zmq.Context))
+(setv player (config "name"))
 
 
-(setv context (Context)
-      socket (.socket context REQ))
+(defn start-socket []
+  (setv socket (.socket context zmq.REQ))
+  ; see https://stackoverflow.com/questions/26915347/zeromq-reset-req-rep-socket-state
+  (.setsockopt socket zmq.RCVTIMEO (* REQUEST_TIMEOUT 1000))
+  (.setsockopt socket zmq.REQ_CORRELATE 1)
+  (.setsockopt socket zmq.REQ_RELAXED 1)
+  (.connect socket (config "server"))
+  socket)
 
-(.connect socket (config "server"))
+(setv socket (start-socket))
 
 
 (defn rpc [payload]
   "Call a function on the server. Return None for timeout."
-  (.send-string socket (wrap payload))
-  (unless (& (socket.poll REQUEST_TIMEOUT) POLLIN)
-    (unwrap (.recv-string socket))))
+  (try
+    (.send-string socket (wrap payload))
+    (:payload (unwrap (.recv-string socket)))
+    (except [zmq.Again]
+      {"role" "error" "content" "Request timed out."})))
 
 (defn send-quit [#* args #** kwargs]
   "This is a parse request but with no waiting."

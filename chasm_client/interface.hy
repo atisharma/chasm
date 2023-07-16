@@ -71,7 +71,7 @@ Functions that relate to output on the screen.
                  :end "\r"
                  :overflow "ellipsis"
                  :crop True)
-  (for [n (range (+ 2 (.count s "\n")))]
+  (for [n (range (+ 2 (.count toolbar "\n")))]
     (print "\033[1A" :end "")) ; up one line
   (print "\033[K" :end "")) ; clear to end of line for new input
 

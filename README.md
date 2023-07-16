@@ -43,12 +43,12 @@ Check your settings in `client.toml` and invoke from inside a terminal, so
 ```bash
 $ chasm
 ```
-will connect to the default server with the character name set in the `client.toml` config.
+will connect to the default server with the character name set in the `client.toml` config (see the example).
 
 ```toml
 name = "Hero"
 world = "default world"
-chasm_server = "chasm.quest:1976"
+chasm_server = "chasm.run:25566"
 loglevel = "info"
 ```
 

@@ -28,14 +28,14 @@ The main REPL where we read output and issue commands.
 
 (defn status [response]
   "Show game, place, inventory..."
-  (let [world-name (:world response)
-        coords (:coords response)
-        p (:player response)
-        name (:name p)
-        inventory (.join ", " (:inventory p))
-        place-name (:place p)
-        score (:score p)
-        objectives (:objectives p)]
+  (let [world-name (:world response None)
+        coords (:coords response {"x" Inf "y" Inf})
+        p (:player response {})
+        name (:name p None) 
+        inventory (.join ", " (:inventory p []))
+        place-name (:place p None)
+        score (:score p None)
+        objectives (:objectives p None)]
     (set-status-line
       (.join "\n"
              [(.join " | "
@@ -65,7 +65,10 @@ it, and passes it to the appropriate action."
       (try ; ----- parser block ----- 
         (if response
             (do
-              (let [message (:result response)]
+              (let [errors (:errors response None)
+                    message (:result response None)]
+                (when errors
+                  (error errors))
                 (when message
                   (match (:role message)
                          "QUIT" (do (clear) (break))
@@ -79,8 +82,9 @@ it, and passes it to the appropriate action."
                   (send-quit player-name "/quit")
                   (clear)
                   (break))
-                (setv response (with [(spinner "Writing...")]
-                                 (parse player-name line)))))
+                (when line
+                  (setv response (with [(spinner "Writing...")]
+                                   (parse player-name line))))))
             (do
               (error "The request to the server timed out. Try again later.")
               (sleep 1)))
