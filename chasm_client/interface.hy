@@ -96,19 +96,11 @@ Functions that relate to output on the screen.
   "Input with prompt-toolkit."
   (pprompt prompt :bottom-toolbar (HTML toolbar)))
 
-(defn _it [s]
-  (+ "<i>" s "</i>"))
+(defn _italic [s]
+  (+ "[italic]" s "[/italic]"))
 
-(defn _tag [s [tag "i"]]
-  (+ f"<{tag}>" s f"</{tag}>"))
-
-(defn _fg [s [col "default"]]
-  (let [tag f"t_fg_{col}"]
-    (+ f"<{tag} fg=\"{col}\">" s f"</{tag}>")))
-
-(defn _bg [s [col "default"]]
-  (let [tag f"t_bg_{col}"]
-    (+ f"<{tag} bg=\"{col}\">" s f"</{tag}>")))
+(defn _color [s [color "black"]]
+  (+ f"[{color}]" s f"[/{color}]"))
 
 ;;; -----------------------------------------------------------------------------
 ;;; Screen control

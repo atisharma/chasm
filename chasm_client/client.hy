@@ -18,6 +18,7 @@
   (.setsockopt socket zmq.RCVTIMEO (* REQUEST_TIMEOUT 1000))
   (.setsockopt socket zmq.REQ_CORRELATE 1)
   (.setsockopt socket zmq.REQ_RELAXED 1)
+  (.setsockopt socket zmq.LINGER 1000)
   (.connect socket (config "server"))
   socket)
 
@@ -30,10 +31,10 @@
     (.send-string socket (wrap payload))
     (:payload (unwrap (.recv-string socket)))
     (except [zmq.Again]
-      {"role" "error" "content" "Request timed out."})))
+      {"errors" "Request timed out."})))
 
 (defn send-quit [#* args #** kwargs]
-  "This is a parse request but with no waiting."
+  "This is a parse request but with no waiting for the reply."
   (.send-string socket (wrap {"function" "parse"
                               "args" args
                               "kwargs" kwargs})))

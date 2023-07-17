@@ -15,7 +15,8 @@ The main REPL where we read output and issue commands.
 (import chasm-client.chat [msgs->dlg])
 (import chasm-client.interface [banner clear console rlinput spinner
                                 exception error info print-message print-messages
-                                set-status-line])
+                                set-status-line
+                                _italic _color])
 
 
 ;;; -----------------------------------------------------------------------------
@@ -35,27 +36,42 @@ The main REPL where we read output and issue commands.
         inventory (.join ", " (:inventory p []))
         place-name (:place p None)
         score (:score p None)
-        objectives (:objectives p None)]
+        objective (:objective p None)]
     (set-status-line
       (.join "\n"
              [(.join " | "
-                     [f"{world-name}"
-                      f"{place-name}"
-                      f"{(:x coords)} {(:y coords)}"])
+                     [(_italic (_color f"{world-name}" "blue"))
+                      (_italic (_color f"{place-name}" "cyan"))
+                      (_italic f"{(:x coords)} {(:y coords)}")])
               (.join " | "
-                     [f"{name}"
-                      f"{objectives}"
-                      f"score: {score}"])
-              f"{inventory}"]))))
+                     [(_italic (_color f"{name}" "blue"))
+                      (_italic (_color f"{objective}" "cyan"))
+                      (_italic f"score: {score}")])
+              (_italic (_color f"{inventory}" "magenta"))]))))
+
+(defn handle [response]
+  "Output the response."
+  (when response
+    (let [errors (:errors response None)
+          message (:result response None)]
+      (when errors
+        (error errors))
+      (when message
+        (match (:role message)
+               "QUIT" (do (clear) (sys.exit))
+               "assistant" (print-message message)
+               "info" (info (:content message))
+               "error" (error (:content message))
+               "history" (print-messages (msgs->dlg player-name "narrator" (:narrative response))))))
+    (status response)))
 
 (defn run []
   "Launch the REPL, which takes player's input, parses
 it, and passes it to the appropriate action."
   (log.info f"Starting REPL at {(.isoformat (datetime.today))}")
-
   (banner)
+  (info "Enter **/help** for help\n")
   (console.rule)
-
   (let [player-name (config "name")
         card-path f"characters/{player-name}.json"
         player-attributes (or (load card-path) {})
@@ -63,38 +79,23 @@ it, and passes it to the appropriate action."
                    (spawn player-name #** player-attributes))]
     (while True
       (try ; ----- parser block ----- 
-        (if response
-            (do
-              (let [errors (:errors response None)
-                    message (:result response None)]
-                (when errors
-                  (error errors))
-                (when message
-                  (match (:role message)
-                         "QUIT" (do (clear) (break))
-                         "assistant" (print-message message)
-                         "info" (info (:content message))
-                         "error" (error (:content message))
-                         "history" (print-messages (msgs->dlg player-name "narrator" (:narrative response))))))
-              (status response)
-              (let [line (.strip (rlinput "> "))]
-                (when (quit? line)
-                  (send-quit player-name "/quit")
-                  (clear)
-                  (break))
-                (when line
-                  (setv response (with [(spinner "Writing...")]
-                                   (parse player-name line))))))
-            (do
-              (error "The request to the server timed out. Try again later.")
-              (sleep 1)))
+        (handle response)
+        (let [line (.strip (rlinput "> "))]
+          (when (quit? line)
+            (send-quit player-name "/quit")
+            (clear)
+            (break))
+          (if line
+              (setv response (with [(spinner "Writing...")]
+                               (parse player-name line)))
+              (setv response None)))
         (except [KeyboardInterrupt]
-          (print)
+          (clear)
           (error "**/quit** to exit"))
         (except [e [Exception]]
           (log.error "REPL error" e :mode "w" :logfile "traceback.log")
           (exception)
-          (sleep 10))))))
+          (sleep 5))))))
 
 (defmain [#* args]
   (sys.exit (run)))
