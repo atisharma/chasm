@@ -115,7 +115,7 @@ Functions that relate to output on the screen.
       (global console)
       (setv console (Console :highlight None :width (int arg))))
     (except [[IndexError ValueError]]
-      (error "Bad console width value."))))
+      (error f"Bad console width value: {arg}"))))
 
 (defn toggle-markdown []
   "Toggle the rendering of markdown in output."

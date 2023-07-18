@@ -7,7 +7,7 @@
 (import chasm-client.wire [wrap unwrap])
 
 
-(setv REQUEST_TIMEOUT 120 ; seconds
+(setv REQUEST_TIMEOUT 180 ; seconds
       context (zmq.Context))
 (setv player (config "name"))
 

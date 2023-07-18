@@ -13,9 +13,10 @@ The main REPL where we read output and issue commands.
 (import chasm-client.lib *)
 (import chasm-client.client [parse spawn send-quit])
 (import chasm-client.chat [msgs->dlg])
-(import chasm-client.interface [banner clear console rlinput spinner
+(import chasm-client.interface [banner clear console rlinput
+                                spinner
                                 exception error info print-message print-messages
-                                set-status-line
+                                set-status-line set-width
                                 _italic _color])
 
 
@@ -36,6 +37,7 @@ The main REPL where we read output and issue commands.
         inventory (.join ", " (:inventory p []))
         place-name (:place p None)
         score (:score p None)
+        score (:turns p None)
         objective (:objective p None)]
     (set-status-line
       (.join "\n"
@@ -46,7 +48,7 @@ The main REPL where we read output and issue commands.
               (.join " | "
                      [(_italic (_color f"{name}" "blue"))
                       (_italic (_color f"{objective}" "cyan"))
-                      (_italic f"score: {score}")])
+                      (_italic f"score: {score}/{turns}")])
               (_italic (_color f"{inventory}" "magenta"))]))))
 
 (defn handle [response]
@@ -62,7 +64,8 @@ The main REPL where we read output and issue commands.
                "assistant" (print-message message)
                "info" (info (:content message))
                "error" (error (:content message))
-               "history" (print-messages (msgs->dlg player-name "narrator" (:narrative response))))))
+               "history" (print-messages (msgs->dlg (config "name") "narrator" (:narrative response [])))
+               "history" (print (:narrative response [])))))
     (status response)))
 
 (defn run []
@@ -81,14 +84,14 @@ it, and passes it to the appropriate action."
       (try ; ----- parser block ----- 
         (handle response)
         (let [line (.strip (rlinput "> "))]
-          (when (quit? line)
-            (send-quit player-name "/quit")
-            (clear)
-            (break))
-          (if line
-              (setv response (with [(spinner "Writing...")]
-                               (parse player-name line)))
-              (setv response None)))
+          (setv response None)
+          (cond (.startswith line "/width ") (set-width line)
+                (quit? line) (do
+                               (send-quit player-name "/quit")
+                               (clear)
+                               (break))
+                line (setv response (with [(spinner "Writing...")]
+                                      (parse player-name line)))))
         (except [KeyboardInterrupt]
           (clear)
           (error "**/quit** to exit"))

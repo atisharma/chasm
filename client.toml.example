@@ -1,4 +1,4 @@
 name = "Hero"
-world = "default world"
+passphrase = 
 server = "tcp://localhost:25566"
 loglevel = "warning"
