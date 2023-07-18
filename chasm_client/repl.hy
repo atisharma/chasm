@@ -37,7 +37,7 @@ The main REPL where we read output and issue commands.
         inventory (.join ", " (:inventory p []))
         place-name (:place p None)
         score (:score p None)
-        score (:turns p None)
+        turns (:turns p None)
         objective (:objective p None)]
     (set-status-line
       (.join "\n"
