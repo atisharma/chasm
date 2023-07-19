@@ -75,6 +75,9 @@ Functions that relate to output on the screen.
     (print "\033[1A" :end "")) ; up one line
   (print "\033[K" :end "")) ; clear to end of line for new input
 
+(defn set-window-title [s]
+  (console.set-window-title s))
+
 (defn set-status-line [s]
   "Set the status line."
   (global toolbar)
@@ -152,13 +155,19 @@ Functions that relate to output on the screen.
 ;;; Printers
 ;;; -----------------------------------------------------------------------------
 
-(defn info [s [style "blue italic"]]
+(defn info [s [style "blue italic"] [width 100]]
   "Print an information string to the screen."
-  (print-markdown s :style style))
+  (print-message
+    {"role" "system" "content" s}
+    :style style
+    :width width))
 
-(defn error [s [style "red italic"]]
+(defn error [s [style "red italic"] [width 100]]
   "Print an error string to the screen."
-  (print-markdown s :style style))
+  (print-message
+    {"role" "system" "content" s}
+    :style style
+    :width width))
 
 (defn exception []
   "Formats and prints the current exception."
@@ -182,43 +191,48 @@ Functions that relate to output on the screen.
                        :overflow "crop"))
   (console.print "[default]"))
 
-(defn print-markdown [s [style None] [padding #(0 3 0 0)]]
-  "Print some markdown to the screen."
-  (print "\033[K" :end "") ; clear to end of line for new input
-  (-> s
-      (sanitize-markdown)
-      (Markdown)
-      (Padding padding)
-      (console.print :justify "left" :style style)))
-
-(defn print-messages [messages]
+(defn print-input [prompt [width 100] [prompt-width 2]]
+  (let [margin (* " " (max 0 (- (// (- console.width width) 2) 10)))
+        line (.strip (rlinput f"{margin}{prompt}"))]
+    (print "\033[1A" :end "") ; up one line
+    (print "\033[K" :end "") ; clear to end of line
+    (when line
+      (print-message {"role" "user" "content" f"*{line}*"
+                      :width width
+                      :prompt-width prompt-width}))
+    line))
+  
+(defn print-messages [messages [width 100]]
   "Format and print messages to the terminal."
   (console.rule)
   (console.print)
   (for [msg messages]
-    (print-message msg :padding #(0 4 1 0)))
+    (print-message msg :width width :prompt-width 10))
   (console.rule))
 
-(defn print-message [msg [padding #(0 3 1 0)]]
+(defn print-message [msg [width 100] [prompt-width 2] [style None]]
   "Format and print a message with role to the screen."
   (let [color (role-color (:role msg))
-        output (Table :padding padding
-                      :expand True
+        width (min width console.width)
+        margin (max 0 (- (// (- console.width width) 2) 10))
+        output (Table :width (+ margin width 2)
+                      :padding #(0 0 1 0)
                       :show-header False
                       :show-lines False
                       :box None)
         role-prompt (case (:role msg)
                           "assistant" ""
-                          "user" "> "
+                          "user" "  > "
                           "system" ""
                           else f"{(:role msg)}: ")]
-    (.add-column output :min-width 2)
-    (.add-column output :ratio 1 :overflow "fold")
-    (.add-row output f"[bold {color}]{role-prompt}[/bold {color}]"
+    (.add-column output :width (- margin prompt-width))
+    (.add-column output :min-width prompt-width)
+    (.add-column output :width width :overflow "fold")
+    (.add-row output "" f"[bold {color}]{role-prompt}[/bold {color}]"
               (if render-markdown
                   (Markdown (sanitize-markdown (:content msg)))
                   (:content msg)))
-    (console.print output :justify "left")))
+    (console.print output :justify "left" :style style)))
 
 (defn print-last-message [messages] 
   (-> messages

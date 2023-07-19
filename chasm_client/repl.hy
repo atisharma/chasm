@@ -15,8 +15,8 @@ The main REPL where we read output and issue commands.
 (import chasm-client.chat [msgs->dlg])
 (import chasm-client.interface [banner clear console rlinput
                                 spinner
-                                exception error info print-message print-messages
-                                set-status-line set-width
+                                exception error info print-message print-messages print-input
+                                set-window-title set-status-line set-width
                                 _italic _color])
 
 
@@ -39,6 +39,7 @@ The main REPL where we read output and issue commands.
         score (:score p None)
         turns (:turns p None)
         objective (:objective p None)]
+    (set-window-title f"chasm - {name} - {world-name} - {place-name}")
     (set-status-line
       (.join "\n"
              [(.join " | "
@@ -55,17 +56,20 @@ The main REPL where we read output and issue commands.
   "Output the response."
   (when response
     (let [errors (:errors response None)
-          message (:result response None)]
+          message (:result response None)
+          width (or (config "width") 100)]
       (when errors
-        (error errors))
+        (error errors :width width))
       (when message
         (match (:role message)
                "QUIT" (do (clear) (sys.exit))
-               "assistant" (print-message message)
-               "info" (info (:content message))
-               "error" (error (:content message))
-               "history" (print-messages (msgs->dlg (config "name") "narrator" (:narrative response [])))
-               "history" (print (:narrative response [])))))
+               "assistant" (print-message message :width width)
+               "info" (info (:content message) :width width)
+               "error" (error (:content message) :width width)
+               "history" (print-messages (msgs->dlg (config "name")
+                                                    "narrator"
+                                                    (:narrative response []))
+                                         :width width))))
     (status response)))
 
 (defn run []
@@ -83,9 +87,11 @@ it, and passes it to the appropriate action."
     (while True
       (try ; ----- parser block ----- 
         (handle response)
-        (let [line (.strip (rlinput "> "))]
+        (let [line (print-input "> ")
+              width (or (config "width") 100)]
           (setv response None)
           (cond (.startswith line "/width ") (set-width line)
+                (.startswith line "/banner") (banner)
                 (quit? line) (do
                                (send-quit player-name "/quit")
                                (clear)
