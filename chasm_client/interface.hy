@@ -133,6 +133,16 @@ Functions that relate to output on the screen.
 ;;; Formatters
 ;;; -----------------------------------------------------------------------------
 
+(defn close-quotes [s]
+  "If there is an odd number of quotes in a line, close the quote."
+  (.join "\n"
+    (lfor line (-> s (.replace "\"\"" "\"") (.splitlines))
+          (if (% (.count line "\"") 2)  ; if an odd number of quotes
+            (cond (= (cut line -2 None) " \"") (cut line 0 -2)
+                  (= (get line -1) "\"")       f"\"{line}"            ; close at start
+                  :else                        f"{line}\"")           ; close at end
+            line))))
+
 (defn sanitize-markdown [s]
   "Prepare a generic string for markdown rendering."
   ;; Markdown swallows single newlines.
@@ -212,7 +222,8 @@ Functions that relate to output on the screen.
 
 (defn print-message [msg [width 100] [prompt-width 2] [style None]]
   "Format and print a message with role to the screen."
-  (let [color (role-color (:role msg))
+  (let [text (-> msg (:content) (close-quotes))
+        color (role-color (:role msg))
         width (min width console.width)
         margin (max 0 (- (// (- console.width width) 2) 10))
         output (Table :width (+ margin width 2)
@@ -230,8 +241,8 @@ Functions that relate to output on the screen.
     (.add-column output :width width :overflow "fold")
     (.add-row output "" f"[bold {color}]{role-prompt}[/bold {color}]"
               (if render-markdown
-                  (Markdown (sanitize-markdown (:content msg)))
-                  (:content msg)))
+                  (Markdown (sanitize-markdown text))
+                  text))
     (console.print output :justify "left" :style style)))
 
 (defn print-last-message [messages] 

@@ -38,19 +38,20 @@ The main REPL where we read output and issue commands.
         place-name (:place p None)
         score (:score p None)
         turns (:turns p None)
-        objective (:objective p None)]
+        objective (:objective p None)
+        compass (.splitlines (:compass p "\n\n\n"))]
     (set-window-title f"chasm - {name} - {world-name} - {place-name}")
     (set-status-line
       (.join "\n"
              [(.join " | "
-                     [(_italic (_color f"{world-name}" "blue"))
+                     [(+ (_color (get compass 0) "green") (_italic (_color f"  {world-name}" "blue")))
                       (_italic (_color f"{place-name}" "cyan"))
                       (_italic f"{(:x coords)} {(:y coords)}")])
               (.join " | "
-                     [(_italic (_color f"{name}" "blue"))
+                     [(+ (_color (get compass 1) "green") (_italic (_color f"  {name}" "blue")))
                       (_italic (_color f"{objective}" "cyan"))
                       (_italic f"score: {score}/{turns}")])
-              (_italic (_color f"{inventory}" "magenta"))]))))
+              (+ (_color (get compass 2) "green") (_italic (_color f"  {inventory}" "magenta")))]))))
 
 (defn handle [response]
   "Output the response."
