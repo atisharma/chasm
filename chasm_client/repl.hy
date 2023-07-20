@@ -46,11 +46,12 @@ The main REPL where we read output and issue commands.
              [(.join " | "
                      [(+ (_color (get compass 0) "green") (_bold (_italic (_color f"  {world-name}" "blue"))))
                       (_italic (_color f"{place-name}" "cyan"))
-                      (_italic f"{(:x coords)} {(:y coords)}")])
+                      (_italic f"{(:x coords)} {(:y coords)}")
+                      (_italic f"{turns} turns")
+                      (_italic f"{score}")])
               (.join " | "
                      [(+ (_color (get compass 1) "green") (_bold (_italic (_color f"  {name}" "blue"))))
-                      (_italic (_color f"{objective}" "cyan"))
-                      (_italic f"{turns} turns")])
+                      (_italic (_color f"{objective}" "cyan"))])
               (+ (_color (get compass 2) "green") (_italic (_color f"  {inventory}" "magenta")))]))))
 
 (defn handle [response]
