@@ -99,6 +99,9 @@ Functions that relate to output on the screen.
   "Input with prompt-toolkit."
   (pprompt prompt :bottom-toolbar (HTML toolbar)))
 
+(defn _bold [s]
+  (+ "[bold]" s "[/bold]"))
+
 (defn _italic [s]
   (+ "[italic]" s "[/italic]"))
 

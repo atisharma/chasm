@@ -17,7 +17,7 @@ The main REPL where we read output and issue commands.
                                 spinner
                                 exception error info print-message print-messages print-input
                                 set-window-title set-status-line set-width
-                                _italic _color])
+                                _bold _italic _color])
 
 
 ;;; -----------------------------------------------------------------------------
@@ -44,13 +44,13 @@ The main REPL where we read output and issue commands.
     (set-status-line
       (.join "\n"
              [(.join " | "
-                     [(+ (_color (get compass 0) "green") (_italic (_color f"  {world-name}" "blue")))
+                     [(+ (_color (get compass 0) "green") (_bold (_italic (_color f"  {world-name}" "blue"))))
                       (_italic (_color f"{place-name}" "cyan"))
                       (_italic f"{(:x coords)} {(:y coords)}")])
               (.join " | "
-                     [(+ (_color (get compass 1) "green") (_italic (_color f"  {name}" "blue")))
+                     [(+ (_color (get compass 1) "green") (_bold (_italic (_color f"  {name}" "blue"))))
                       (_italic (_color f"{objective}" "cyan"))
-                      (_italic f"score: {score}/{turns}")])
+                      (_italic f"{turns} turns")])
               (+ (_color (get compass 2) "green") (_italic (_color f"  {inventory}" "magenta")))]))))
 
 (defn handle [response]
