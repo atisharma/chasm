@@ -45,3 +45,8 @@
   (rpc {"method" "parse"
         "args" args
         "kwargs" kwargs}))
+
+(defn motd [#* args #** kwargs]
+  (rpc {"method" "motd"
+        "args" args
+        "kwargs" kwargs}))

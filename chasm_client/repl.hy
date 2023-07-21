@@ -11,7 +11,7 @@ The main REPL where we read output and issue commands.
 (import time [sleep])
 
 (import chasm-client.lib *)
-(import chasm-client.client [parse spawn send-quit])
+(import chasm-client.client [motd spawn parse send-quit])
 (import chasm-client.chat [msgs->dlg])
 (import chasm-client.interface [banner clear console rlinput
                                 spinner
@@ -80,6 +80,7 @@ it, and passes it to the appropriate action."
   (banner)
   (info "Enter **/help** for help\n")
   (console.rule)
+  (handle (motd))
   (let [player-name (config "name")
         card-path f"characters/{player-name}.json"
         player-attributes (or (load card-path) {})
