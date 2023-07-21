@@ -1,5 +1,5 @@
 "
-The client protocol implementation.
+The client protocol implementation. The client signs messages.
 "
 (import json)
 (import zmq)
@@ -27,8 +27,6 @@ The client protocol implementation.
   (let [t (str (time))
         payload-hash (hash-id (+ t (json.dumps payload)))
         signature (crypto.sign priv-key payload-hash)]
-    ;(print f"{payload}\n\n{pub-key}\n{signature}\n{payload-hash}")
-    ;(print (crypto.verify pub-key signature payload-hash))
     (json.dumps {"payload" payload
                  "proto_version" CHASM_PROTOCOL_VERSION
                  "client_version" CHASM_CLIENT_VERSION
@@ -39,10 +37,11 @@ The client protocol implementation.
                  "public_key" pub-key
                  "signature" signature})))
 
-
-
 (defn unwrap [zmsg]
   "Unwrap message. Return None if it doesn't decode. Otherwise, return function and data."
   (try (json.loads zmsg)
     (except [json.JSONDecodeError]
       (log.error f"wire/unwrap: {zmsg}"))))
+
+(defn zerror [code message]
+  {"error" {"code" code "message" message}})

@@ -57,22 +57,21 @@ The main REPL where we read output and issue commands.
 (defn handle [response]
   "Output the response."
   (when response
-    (let [errors (:errors response None)
+    (let [zerror (:error response None)
           message (:result response None)
           width (or (config "width") 100)]
-      (when errors
-        (error errors :width width))
-      (when message
-        (match (:role message)
-               "QUIT" (do (clear) (sys.exit))
-               "assistant" (print-message message :width width)
-               "info" (info (:content message) :width width)
-               "error" (error (:content message) :width width)
-               "history" (print-messages (msgs->dlg (config "name")
-                                                    "narrator"
-                                                    (:narrative response []))
-                                         :width width))))
-    (status response)))
+      (cond zerror (error (:message zerror) :width width)
+            message (do
+                      (match (:role message)
+                             "QUIT" (do (clear) (sys.exit))
+                             "assistant" (print-message message :width width)
+                             "info" (info (:content message) :width width)
+                             "error" (error (:content message) :width width)
+                             "history" (print-messages (msgs->dlg (config "name")
+                                                                  "narrator"
+                                                                  (:narrative response []))
+                                                       :width width))
+                      (status response))))))
 
 (defn run []
   "Launch the REPL, which takes player's input, parses

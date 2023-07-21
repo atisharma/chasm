@@ -4,13 +4,11 @@
 (import zmq)
 
 (import chasm-client.lib [config])
-(import chasm-client.wire [wrap unwrap])
+(import chasm-client.wire [wrap unwrap zerror])
 
 
 (setv REQUEST_TIMEOUT 180 ; seconds
       context (zmq.Context))
-(setv player (config "name"))
-
 
 (defn start-socket []
   (setv socket (.socket context zmq.REQ))
@@ -24,27 +22,26 @@
 
 (setv socket (start-socket))
 
-
 (defn rpc [payload]
-  "Call a function on the server. Return None for timeout."
+  "Call a method on the server. Return None for timeout."
   (try
     (.send-string socket (wrap payload))
     (:payload (unwrap (.recv-string socket)))
     (except [zmq.Again]
-      {"errors" "Request timed out."})))
+      (zerror "TIMEOUT" "Request timed out."))))
 
 (defn send-quit [#* args #** kwargs]
   "This is a parse request but with no waiting for the reply."
-  (.send-string socket (wrap {"function" "parse"
+  (.send-string socket (wrap {"method" "parse"
                               "args" args
                               "kwargs" kwargs})))
 
 (defn spawn [#* args #** kwargs]
-  (rpc {"function" "spawn"
+  (rpc {"method" "spawn"
         "args" args
         "kwargs" kwargs}))
 
 (defn parse [#* args #** kwargs]
-  (rpc {"function" "parse"
+  (rpc {"method" "parse"
         "args" args
         "kwargs" kwargs}))
