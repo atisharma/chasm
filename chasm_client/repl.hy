@@ -76,6 +76,11 @@ The main REPL where we read output and issue commands.
 (defn run []
   "Launch the REPL, which takes player's input, parses
 it, and passes it to the appropriate action."
+  (unless (and (config "name")
+               (config "passphrase")
+               (config "server"))
+    (print "You must specify name, passphrase and server in client.toml.")
+    (sys.exit 1))        
   (log.info f"Starting REPL at {(.isoformat (datetime.today))}")
   (banner)
   (info "Enter **/help** for help\n")
