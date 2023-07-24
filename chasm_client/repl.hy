@@ -28,7 +28,7 @@ The main REPL where we read output and issue commands.
   (or (.startswith line "/q")
       (.startswith line "/exit")))
 
-(defn status [response]
+(defn status [width response]
   "Show game, place, inventory..."
   (let [world-name (:world response None)
         coords (:coords response {"x" Inf "y" Inf})
@@ -39,6 +39,9 @@ The main REPL where we read output and issue commands.
         score (:score p None)
         turns (:turns p None)
         objective (:objective p None)
+        objective-short (cond (not objective) ""
+                              (< (len objective)(- width (len name) 10)) objective
+                              :else (+ (cut objective (max 1 (- width (len name) 10))) "…"))
         compass (.splitlines (:compass p "\n\n\n"))]
     (set-window-title f"chasm - {name} - {world-name} - {place-name}")
     (set-status-line
@@ -51,7 +54,7 @@ The main REPL where we read output and issue commands.
                       (_italic f"{score}")])
               (.join " | "
                      [(+ (_color (get compass 1) "green") (_bold (_italic (_color f"  {name}" "blue"))))
-                      (_italic (_color f"{objective}" "cyan"))])
+                      (_italic (_color f"{objective-short}" "cyan"))])
               (+ (_color (get compass 2) "green") (_italic (_color f"  {inventory}" "magenta")))]))))
 
 (defn handle [response]
@@ -71,7 +74,7 @@ The main REPL where we read output and issue commands.
                                                                   "narrator"
                                                                   (:narrative response []))
                                                        :width width))
-                      (status response))))))
+                      (status width response))))))
 
 (defn run []
   "Launch the REPL, which takes player's input, parses

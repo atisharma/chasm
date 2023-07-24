@@ -1,6 +1,8 @@
+"
+ZMQ REQ-ROUTER connection.
+"
 (require hyrule [unless])
 
-(import json)
 (import zmq)
 
 (import chasm-client.lib [config])
@@ -25,16 +27,16 @@
 (defn rpc [payload]
   "Call a method on the server. Return None for timeout."
   (try
-    (.send-string socket (wrap payload))
-    (:payload (unwrap (.recv-string socket)))
+    (.send socket (wrap payload))
+    (:payload (unwrap (.recv socket)))
     (except [zmq.Again]
       (zerror "TIMEOUT" "Request timed out."))))
 
 (defn send-quit [#* args #** kwargs]
   "This is a parse request but with no waiting for the reply."
-  (.send-string socket (wrap {"method" "parse"
-                              "args" args
-                              "kwargs" kwargs})))
+  (.send socket (wrap {"method" "parse"
+                       "args" args
+                       "kwargs" kwargs})))
 
 (defn spawn [#* args #** kwargs]
   (rpc {"method" "spawn"
