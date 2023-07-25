@@ -4,7 +4,7 @@ The main REPL where we read output and issue commands.
 (require hyrule [defmain unless])
 (require hyrule.argmove [-> ->> as->])
 
-(import chasm-client [log])
+(import chasm [log])
 
 (import os)
 (import datetime [datetime])
