@@ -3,9 +3,9 @@ Chat management functions.
 "
 (require hyrule.argmove [-> ->>])
 
-(import chasm-client [log])
+(import chasm [log])
 
-(import chasm-client.lib *)
+(import chasm.lib *)
 
 
 ;;; -----------------------------------------------------------------------------

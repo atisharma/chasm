@@ -1,6 +1,6 @@
 (import logging)
 
-(import chasm-client.lib *)
+(import chasm.lib *)
 
 
 (setv logfile (or (config "logfile") "chasm.log"))

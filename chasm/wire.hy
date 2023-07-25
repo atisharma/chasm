@@ -6,8 +6,8 @@ The client protocol implementation. The client signs messages.
 (import time [time])
 (import uuid [uuid1])
 
-(import chasm-client [crypto])
-(import chasm-client.lib [config hash-id])
+(import chasm [crypto])
+(import chasm.lib [config hash-id])
 
 
 (setv sender-id (. (uuid1) hex))

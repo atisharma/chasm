@@ -10,14 +10,14 @@ The main REPL where we read output and issue commands.
 (import datetime [datetime])
 (import time [sleep])
 
-(import chasm-client.lib *)
-(import chasm-client.client [motd spawn parse send-quit])
-(import chasm-client.chat [msgs->dlg])
-(import chasm-client.interface [banner clear console rlinput
-                                spinner
-                                exception error info print-message print-messages print-input
-                                set-window-title set-status-line set-width
-                                _bold _italic _color])
+(import chasm.lib *)
+(import chasm.client [motd spawn parse send-quit])
+(import chasm.chat [msgs->dlg])
+(import chasm.interface [banner clear console rlinput
+                         spinner
+                         exception error info print-message print-messages print-input
+                         set-window-title set-status-line set-width
+                         _bold _italic _color])
 
 
 ;;; -----------------------------------------------------------------------------

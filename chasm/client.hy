@@ -5,8 +5,8 @@ ZMQ REQ-ROUTER connection.
 
 (import zmq)
 
-(import chasm-client.lib [config])
-(import chasm-client.wire [wrap unwrap zerror])
+(import chasm.lib [config])
+(import chasm.wire [wrap unwrap zerror])
 
 
 (setv REQUEST_TIMEOUT 180 ; seconds
