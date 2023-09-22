@@ -43,7 +43,7 @@ Check your settings in `client.toml` and invoke from inside a terminal, so
 ```bash
 $ chasm
 ```
-will connect to the default server with the character name set in the `client.toml` config (see the example).
+will connect to the default server with the character name set in the `client.toml` config (see the example). You'll need to specify a passphrase which will be the key for your character.
 
 ```toml
 name = "Hero"
