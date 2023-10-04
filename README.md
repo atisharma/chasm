@@ -37,9 +37,31 @@ with a good model.
 
 ## Installing and running
 
+### Installing
+
+There are a lot of dependencies so it's recommended you install
+everything in a virtual environment.  Either clone the repo, install
+the `requirements.txt` and run the module
+```bash
+$ <activate your venv>
+$ git clone https://github.com/atisharma/chasm
+$ cd chasm
+$ pip install -r requirements.txt
+$ python -m chasm
+```
+
+Or, install using pip (recommended)
+```bash
+$ <activate your venv>
+$ pip install -U git+https://github.com/atisharma/chasm
+```
+
+You may want to consider using pyenv for complete control over your python version.
+
+
 ### Running the client
 
-Check your settings in `client.toml` and invoke from inside a terminal, so
+Check your settings in `client.toml`, activate your venv and invoke chasm from inside your terminal, so
 ```bash
 $ chasm
 ```
