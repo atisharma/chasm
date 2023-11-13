@@ -6,6 +6,8 @@ scenes and characters as you play. Unlike simply role-playing with a
 chatbot, important state persists (locations, characters, dialogue
 etc.)
 
+See the [example gameplay](example-gameplay.md) for what a new game can be like.
+
 **This is the client software that connects to a server.**
 
 Chasm is still being written. It's already pretty great though,
