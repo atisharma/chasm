@@ -50,6 +50,7 @@ $ <activate your venv>
 $ git clone https://github.com/atisharma/chasm
 $ cd chasm
 $ pip install -r requirements.txt
+# edit the client.toml file
 $ python -m chasm
 ```
 
@@ -57,6 +58,8 @@ Or, install using pip (recommended)
 ```bash
 $ <activate your venv>
 $ pip install -U git+https://github.com/atisharma/chasm
+# edit the client.toml file
+$ chasm
 ```
 
 You may want to consider using pyenv for complete control over your python version.
