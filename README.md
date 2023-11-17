@@ -9,6 +9,7 @@ etc.)
 See the [example gameplay](example-gameplay.md) for what a new game can be like.
 
 **This is the client software that connects to a server.**
+To play, you need to connect to [a server](https://github.com/atisharma/chasm_engine).
 
 Chasm is still being written. It's already pretty great though,
 with a good model.
