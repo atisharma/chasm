@@ -4,7 +4,7 @@ import sys
 from chasm.lib import config, slurp
 
 if not (config("name") and config("passphrase") and config("server")):
-    print("""You must specify name, passphrase and server in client.toml.
+    print("""You must specify a unique name, a passphrase and the server in the file client.toml.
 For example:
     
 name = "Hero"
