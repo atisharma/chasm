@@ -10,5 +10,5 @@ For example:
 name = "Hero"
 passphrase = "Hero's super-secret passphrase"
 server = "tcp://chasm.run:25566"
-"""
+""")
     sys.exit(1)
