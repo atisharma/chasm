@@ -1,4 +1,5 @@
 name = "Hero"
 passphrase = 
+# set the host and port, which will differ depending on which world you are joining
 server = "tcp://localhost:25566"
 loglevel = "warning"
