@@ -43,22 +43,13 @@ with a good model.
 ### Installing
 
 There are a lot of dependencies so it's recommended you install
-everything in a virtual environment.  Either clone the repo, install
-the `requirements.txt` and run the module
+everything in a virtual environment.
+To install using pip:
 ```bash
 $ <activate your venv>
-$ git clone https://github.com/atisharma/chasm
-$ cd chasm
-$ pip install -r requirements.txt
-# edit the client.toml file
-$ python -m chasm
-```
-
-Or, install using pip (recommended)
-```bash
-$ <activate your venv>
-$ pip install -U git+https://github.com/atisharma/chasm
-# edit the client.toml file
+$ pip3 install -U git+https://github.com/atisharma/chasm
+# edit the client.toml file (see below), for example using nano
+$ nano client.toml
 $ chasm
 ```
 
@@ -75,10 +66,14 @@ will connect to the default server with the character name set in the `client.to
 
 ```toml
 name = "Hero"
-world = "default world"
-chasm_server = "chasm.run:25566"
+passphrase = "sup3r-secr3t un1que pa55phrase"
+# connect to a world on a specific port on the server
+chasm_server = "tcp://chasm.run:PORT"
 loglevel = "info"
 ```
+where `PORT` is the port number of your [world](https://chasm.run/worlds).
+
+You'll need to run it inside a terminal that can handle escape characters (colour etc). Any linux terminal should work - I'm not sure about Windows.
 
 ### Character cards
 
