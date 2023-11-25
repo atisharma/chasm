@@ -76,7 +76,7 @@ The main REPL where we read output and issue commands.
                                                        :width width))
                       (status width response))))))
 
-(defn run []
+(defn repl []
   "Launch the REPL, which takes player's input, parses
 it, and passes it to the appropriate action."
   (log.info f"Starting REPL at {(.isoformat (datetime.today))}")
