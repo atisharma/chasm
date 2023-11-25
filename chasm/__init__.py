@@ -3,7 +3,7 @@ import sys
 
 from chasm.lib import config, slurp
 
-if not (config("name") and config("passphrase") and config("server")):
+def _berate_config():
     print("""You must specify a unique character name, a passphrase and the server in the file client.toml.
 For example, to connect to a world served on PORT:
     
@@ -13,4 +13,13 @@ server = "tcp://chasm.run:PORT"
 
 See https://chasm.run/worlds for what world to join.
 """)
+
+try:
+    if not (config("name") and config("passphrase") and config("server")):
+        _berate_config()
+        sys.exit(1)
+except FileNotFoundError:
+    print("The file client.toml needs to be in the current directory.\n")
+    _berate_config()
+
     sys.exit(1)
