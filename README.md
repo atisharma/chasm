@@ -9,7 +9,7 @@ etc.)
 See the [example gameplay](example-gameplay.md) for what a new game can be like.
 
 **This is the client software that connects to a server.**
-To play, you need to connect to [a server](https://github.com/atisharma/chasm_engine).
+To play, you need to connect to [a server](https://chasm.run/worlds).
 
 Chasm is still being written. It's already pretty great though,
 with a good model.
@@ -23,18 +23,20 @@ with a good model.
 * [x] continue / save file for game
 * [x] persistent items
 * [x] character inventory
-* [x] take, drop, use items
-* [ ] permanently modify items
 * [x] per-character event memory
 * [x] per-character quests
-* [x] NPCs should travel
+* [x] take, drop, use items
+* [ ] permanently modify items
+* [ ] natural item interaction
+* [ ] natural item spawning from narrative
 * [ ] NPCs should interact with items
 * [ ] NPCs should interact with plot, follow quests
+* [x] NPCs should travel
 * [x] persistent global event memory (plot events in vector db)
 * [x] per-character dialogue memory (snippets in vector db)
 * [x] play as any character
-* [ ] world editor for manual world construction
-* [x] multiplayer - separate server & client
+* [x] world editor / admin repl for manual world construction
+* [x] multiplayer - separate async server with many clients
 * [x] player authentication
 
 
