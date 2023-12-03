@@ -44,7 +44,7 @@ with a good model.
 
 ### Installing
 
-There are a lot of dependencies so it's recommended you install
+There are some dependencies so you may want to install
 everything in a virtual environment.
 To install using pip:
 ```bash
@@ -64,7 +64,7 @@ Check your settings in `client.toml`, activate your venv and invoke chasm from i
 ```bash
 $ chasm
 ```
-will connect to the default server with the character name set in the `client.toml` config (see the example). You'll need to specify a passphrase which will be the key for your character.
+will connect to the server with the character name set in the `client.toml` config (see the example). You'll need to specify a passphrase which will be the key for your character.
 
 ```toml
 name = "Hero"

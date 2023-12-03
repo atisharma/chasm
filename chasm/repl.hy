@@ -112,4 +112,4 @@ it, and passes it to the appropriate action."
           (sleep 5))))))
 
 (defmain [#* args]
-  (sys.exit (run)))
+  (sys.exit (repl)))

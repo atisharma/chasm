@@ -1,7 +1,7 @@
 import hy
 import sys
 
-from chasm.lib import config, slurp
+from chasm.lib import config, barf
 
 def _berate_config():
     print("""You must specify a unique character name, a passphrase and the server in the file client.toml.
@@ -19,7 +19,10 @@ try:
         _berate_config()
         sys.exit(1)
 except FileNotFoundError:
-    print("The file client.toml needs to be in the current directory.\n")
+    barf('name = "Player"\npassphrase = "your secret passphrase"\nserver = "https://chasm.run:WORLD_PORT"\n', "client.toml")
+    print("""The file client.toml needs to be in the current directory.
+I've saved a template you can edit.
+""")
     _berate_config()
 
     sys.exit(1)
