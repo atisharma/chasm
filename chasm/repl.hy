@@ -48,8 +48,7 @@ The main REPL where we read output and issue commands.
       (.join "\n"
              [(.join " | "
                      [(+ (_color (get compass 0) "green") (_bold (_italic (_color f"  {world-name}" "blue"))))
-                      (_italic (_color f"{place-name}" "cyan"))
-                      (_italic f"{(:x coords)} {(:y coords)}")
+                      (_italic (_color f"{place-name} @ {(:x coords)}, {(:y coords)}" "cyan"))
                       (_italic f"{turns} turns")
                       (_italic f"{score}")])
               (.join " | "
