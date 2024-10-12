@@ -1,6 +1,7 @@
 "
 The main REPL where we read output and issue commands.
 "
+
 (require hyrule [defmain unless])
 (require hyrule.argmove [-> ->> as->])
 
@@ -20,9 +21,8 @@ The main REPL where we read output and issue commands.
                          _bold _italic _color])
 
 
-;;; -----------------------------------------------------------------------------
-;;; All player-specific code goes in here
-;;; -----------------------------------------------------------------------------
+;; All player-specific code goes in here
+;; -----------------------------------------------------------------------------
 
 (defn quit? [line]
   (or (.startswith line "/q")

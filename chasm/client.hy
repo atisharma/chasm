@@ -1,6 +1,7 @@
 "
 ZMQ REQ-ROUTER connection.
 "
+
 (require hyrule [unless])
 
 (import zmq)
@@ -8,6 +9,7 @@ ZMQ REQ-ROUTER connection.
 (import chasm.lib [config])
 (import chasm.wire [wrap unwrap zerror])
 
+;; TODO: DEALER socket, async, watch for updates
 
 (setv REQUEST_TIMEOUT 180 ; seconds
       context (zmq.Context))
@@ -50,5 +52,10 @@ ZMQ REQ-ROUTER connection.
 
 (defn motd [#* args #** kwargs]
   (rpc {"method" "motd"
+        "args" args
+        "kwargs" kwargs}))
+
+(defn status [#* args #** kwargs]
+  (rpc {"method" "status"
         "args" args
         "kwargs" kwargs}))

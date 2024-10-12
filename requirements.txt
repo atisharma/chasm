@@ -1,6 +1,4 @@
-hy
-hyrule
-tomli
+hyjinx
 rich
 pyzmq
 ecdsa

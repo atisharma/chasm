@@ -1,7 +1,7 @@
 import hy
 import sys
 
-from chasm.lib import config, barf
+from chasm.lib import config, spit
 
 default_config = """name = "Hero"
 passphrase = "Hero's super-secret passphrase"
@@ -18,7 +18,7 @@ try:
         _berate_config()
         sys.exit(1)
 except FileNotFoundError:
-    barf(default_config, "client.toml")
+    spit(default_config, "client.toml")
     print("""The file client.toml needs to be in the current directory.
 I've saved a template client.toml you can edit.
 """)

@@ -23,8 +23,9 @@ Functions that relate to output on the screen.
 ; not sure if this is worth it.
 ;(import prompt-toolkit [HTML prompt :as pprompt])
 
+;; TODO: set up separate output and input consoles
 
-;;; -----------------------------------------------------------------------------
+;; -----------------------------------------------------------------------------
 
 (setv console (Console :highlight None))
 (setv colors (list (.keys ANSI_COLOR_NAMES)))
@@ -33,9 +34,8 @@ Functions that relate to output on the screen.
 ;; status bar
 (setv toolbar "")
 
-;;; -----------------------------------------------------------------------------
-;;; load/save readline history at startup/exit
-;;; -----------------------------------------------------------------------------
+;; load/save readline history at startup/exit
+;; -----------------------------------------------------------------------------
 
 (try
   (let [history-file (os.path.join (os.path.expanduser "~") ".chasm_history")]
@@ -44,9 +44,8 @@ Functions that relate to output on the screen.
     (readline.read-history-file history-file))
   (except [e [FileNotFoundError]]))
 
-;;; -----------------------------------------------------------------------------
-;;; Input, status
-;;; -----------------------------------------------------------------------------
+;; Input, status
+;; -----------------------------------------------------------------------------
 
 (defn rlinput [prompt [prefill ""]]
   "Like python's input() but using readline."
@@ -108,9 +107,8 @@ Functions that relate to output on the screen.
 (defn _color [s [color "black"]]
   (+ f"[{color}]" s f"[/{color}]"))
 
-;;; -----------------------------------------------------------------------------
-;;; Screen control
-;;; -----------------------------------------------------------------------------
+;; Screen control
+;; -----------------------------------------------------------------------------
 
 (defn clear []
   (console.clear))
@@ -132,9 +130,8 @@ Functions that relate to output on the screen.
   (console.status (Text s :style style)
                   :spinner spinner))
 
-;;; -----------------------------------------------------------------------------
-;;; Formatters
-;;; -----------------------------------------------------------------------------
+;; Formatters
+;; -----------------------------------------------------------------------------
 
 (defn close-quotes [s]
   "If there is an odd number of quotes in a line, close the quote."
@@ -164,9 +161,8 @@ Functions that relate to output on the screen.
               (+ 1))]
     (get colors i)))
 
-;;; -----------------------------------------------------------------------------
-;;; Printers
-;;; -----------------------------------------------------------------------------
+;; Printers
+;; -----------------------------------------------------------------------------
 
 (defn info [s [style "blue italic"] [width 100]]
   "Print an information string to the screen."
@@ -186,7 +182,7 @@ Functions that relate to output on the screen.
   "Formats and prints the current exception."
   (console.print-exception :max-frames 2))
 
-;;; -----------------------------------------------------------------------------
+;; -----------------------------------------------------------------------------
 
 (defn banner []
   (console.clear)

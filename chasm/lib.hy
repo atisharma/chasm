@@ -2,6 +2,15 @@
 (require hyrule.control [unless])
 (import hyrule [inc dec rest butlast starmap distinct])
 
+(import hyjinx.lib [mreload
+                    first second last drop
+                    hash-id short-id])
+(import hyjinx.lib [slurp
+                    spit
+                    jload :as load
+                    jsave :as save
+                    jappend :as file-append])
+
 (import functools [partial cache lru-cache])
 (import itertools *)
 
@@ -14,35 +23,11 @@
 (import hashlib [sha1 pbkdf2-hmac])
 (import hmac [compare-digest])
 
-;; tomllib for python 3.11 onwards
-;; when we move to 3.11, we can remove this
-(try
-  (import tomllib)
-  (except [ModuleNotFoundError]
-    (import tomli :as tomllib)))
+(import tomllib) ; tomllib for python 3.11 onwards
 
 
-;;; -----------------------------------------------------------------------------
-;;; meta functions
-;;; -----------------------------------------------------------------------------
-
-(defn mreload [#* modules]
-  "Reload a whole list of modules."
-  (for [m modules]
-    (try (importlib.reload m)
-         (except [e [ImportError]] 
-            (print e)))))
-
-;;; -----------------------------------------------------------------------------
-;;; list functions
-;;; -----------------------------------------------------------------------------
-
-(defn first [xs]
-  (next (iter xs)))
-
-(defn last [xs]
-  (when xs
-    (next (reversed xs))))
+;; list functions
+;; -----------------------------------------------------------------------------
 
 (defn sieve [xs]
   (filter None xs))
@@ -51,17 +36,8 @@
   "Split into pairs. So ABCD -> AB CD."
   (zip (islice xs 0 None 2) (islice xs 1 None 2)))
   
-(defn prepend [x l]
-  "Prepend x at the front of list l."
-  (+ [x] l))
-
-(defn append [x l]
-  "Append x to list l."
-  (+ l [x]))
-
-;;; -----------------------------------------------------------------------------
-;;; config functions
-;;; -----------------------------------------------------------------------------
+;; config functions
+;; -----------------------------------------------------------------------------
 
 (setv config-file "client.toml")
 
@@ -77,71 +53,16 @@
     (except [KeyError]
       None)))
 
-;;; -----------------------------------------------------------------------------
-;;; File & IO functions
-;;; -----------------------------------------------------------------------------
-
-(defn load [fname]
-  "Read a json file. None if it doesn't exist."
-  (let [path (Path fname)]
-    (when (path.exists)
-      (with [f (open fname
-                     :mode "r"
-                     :encoding "UTF-8")]
-        (json.load f)))))
-
-(defn save [obj fname]
-  "Write an object as a json file."
-  (with [f (open fname
-                 :mode "w"
-                 :encoding "UTF-8")]
-    (json.dump obj f :indent 4)))
-
-(defn file-append [record fname]
- "Append / write a dict to a file as json.
- If the file does not exist, initialise a file with the record.
- If the file exists, append to it.
- Cobbled together from https://stackoverflow.com/a/31224105
- it overwrites the closing ']' with the new record + a new ']'.
- POSIX expects a trailing newline."
-  (when fname
-    (if (os.path.isfile fname)
-      (with [f (open fname :mode "r+" :encoding "UTF-8")]
-        (.seek f 0 os.SEEK_END)
-        (.seek f (- (.tell f) 2))
-        (.write f (.format ",\n{}]\n" (json.dumps record :indent 4))))
-      (with [f (open fname :mode "w" :encoding "UTF-8")]
-        (.write f (.format "[\n{}]\n" (json.dumps record :indent 4)))))))
-
-(defn slurp [fname]
-  "Read a plain text file."
-  (let [path (Path fname)]
-    (when (path.exists)
-      (path.read-text))))
-
-(defn barf [text fname]
-  "Write a plain text file."
-  (with [f (open fname :mode "w" :encoding "UTF-8")]
-    (.write f text)))
+;; File & IO functions
+;; -----------------------------------------------------------------------------
 
 (defn mksubdir [d]
   (.mkdir (Path (.join "/" [path d]))
           :parents True
           :exist-ok True))  
 
-;;; -----------------------------------------------------------------------------
-;;; Hashing, id and password functions
-;;; -----------------------------------------------------------------------------
-
-(defn hash-id [s]
-  "Hex digest of sha1 hash of string."
-  (-> (s.encode "utf-8")
-      (sha1)
-      (.hexdigest)))
-
-(defn short-id [x]
-  "First 6 chars of hash-id."
-  (cut (hash-id x) 6))
+;; Hashing, id and password functions
+;; -----------------------------------------------------------------------------
 
 (defn hash-pw [pw]
   "Hash password with a secret salt."
@@ -162,9 +83,8 @@
                                                  :iterations 100000
                                                  :salt salt)))))
 
-;;; -----------------------------------------------------------------------------
-;;; String functions
-;;; -----------------------------------------------------------------------------
+;; String functions
+;; -----------------------------------------------------------------------------
 
 (defn format-msg [message] 
   "Format a chat or dialogue message as a string."

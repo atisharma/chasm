@@ -6,14 +6,17 @@ The client protocol implementation. The client signs messages.
 (import time [time])
 (import uuid [uuid1])
 
-(import chasm [crypto])
+(import hyjinx [crypto])
+
 (import chasm.lib [config hash-id])
 
 
 (setv sender-id (. (uuid1) hex))
 
 
+;; TODO increment this when implementing `status`
 (setv CHASM_PROTOCOL_VERSION "0.0.1")
+;; TODO maybe get this from the module version
 (setv CHASM_CLIENT_VERSION (.join "/" [__name__ "0.0.1"]))
 
 (setv keys (crypto.keys (config "passphrase"))
