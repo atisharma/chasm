@@ -18,15 +18,21 @@ CANONICAL_REPO = os.environ.get(
     "CHASM_REPO_URL", "https://github.com/atisharma/chasm.git"
 )
 
-# Managed files: came from the template, safe to overwrite on update.
-# Everything else (memory/**, models.json, APPEND_SYSTEM.md, sessions/,
-# .git/) is game-owned and never touched by 'chasm update GAME'.
+# Managed files: came from the template, safe to overwrite on update. These
+# are chasm's shipped tooling and narrator-spec; refreshing them lets fixes
+# and behaviour changes reach existing games. Uncommitted local edits are
+# still preserved (see _is_locally_modified), so a per-game customisation is
+# only overwritten if it was committed and the user runs an explicit update.
+# Everything else is game-owned and never touched by 'chasm update GAME':
+# world content (memory/* except AGENTS.md), models.json, sessions/, .git/.
 MANAGED_FILES = [
     "settings.json",
     "bin/bootstrap",
     "bin/save",
     "bin/chasm-validate",
     ".gitignore",
+    "memory/AGENTS.md",
+    "APPEND_SYSTEM.md",
 ]
 # The extensions directory is managed wholesale: *.ts files the template no
 # longer ships are removed as well as refreshed.
@@ -456,7 +462,7 @@ def cmd_update_game(name: str, force: bool) -> None:
             print(f"Updated {name}: {', '.join(changed)}")
         if removed:
             print(f"Removed from {name}: {', '.join(removed)}")
-        print("  (memory/, models.json, APPEND_SYSTEM.md untouched)")
+        print("  (world state, models.json, sessions/ untouched)")
     elif skipped:
         print(f"Nothing updated in {name} (all changed files skipped; "
               "use --force to overwrite).")

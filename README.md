@@ -78,10 +78,11 @@ chasm update --all --force   # ...overwriting locally-modified tooling files
 `chasm update` pulls the latest template and CLI from the canonical repo into
 `~/.local/share/chasm/` (`$XDG_DATA_HOME/chasm/`; your `models.json` config
 there and all games are preserved). `chasm update GAME` refreshes only the managed tooling files in an
-existing game (`settings.json`, `bin/`, `.pi/extensions/`, `.gitignore`) and
-commits them as `[chasm] Update template files`. Game content — `memory/`,
-`APPEND_SYSTEM.md`, sessions, and the `models.json` symlink — is never
-touched. Tooling files you have edited locally are skipped with a warning
+existing game (`settings.json`, `bin/`, `.pi/extensions/`, `.gitignore`,
+`memory/AGENTS.md`, `APPEND_SYSTEM.md`) and commits them as `[chasm] Update
+template files`. Game content — `memory/` world state (places, characters,
+events, `WORLD.md`), sessions, and the `models.json` symlink — is never
+touched. Managed files you have edited locally are skipped with a warning
 unless `--force` is given.
 
 ## In-Game Commands
