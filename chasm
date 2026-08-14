@@ -229,28 +229,58 @@ def _atomic_copy(src: Path, dst: Path) -> None:
 
 
 def _ensure_source_checkout() -> None:
-    """Clone or pull the canonical repo into $CHASM_DATA/chasm.
+    """Clone or sync the canonical repo into $CHASM_DATA/chasm.
 
     Web installs clone there too, but manual installs have no recorded
-    source location, so 'chasm update' maintains its own checkout.
+    source location, so 'chasm update' maintains its own checkout. The
+    checkout is a throwaway mirror: local edits and stray files are
+    discarded so they can never block a self-update.
     """
     if (SOURCE_DIR / ".git").is_dir():
+        # Sync a possibly-dirty mirror. 'git pull --ff-only' would abort on
+        # local edits or untracked files, so fetch and hard-reset to the
+        # remote default branch instead.
         result = subprocess.run(
-            ["git", "-C", str(SOURCE_DIR), "pull", "--ff-only"],
+            ["git", "-C", str(SOURCE_DIR), "fetch", "origin"],
             capture_output=True, text=True,
         )
-    else:
-        pre_existed = SOURCE_DIR.exists()
-        SOURCE_DIR.parent.mkdir(parents=True, exist_ok=True)
-        result = subprocess.run(
-            ["git", "clone", CANONICAL_REPO, str(SOURCE_DIR)],
+        if result.returncode != 0:
+            detail = (result.stderr or result.stdout).strip()
+            die(f"Cannot reach {CANONICAL_REPO}. Check your network and try again.\n"
+                f"git said: {detail}")
+
+        # Resolve the remote default branch; fall back to main.
+        symref = subprocess.run(
+            ["git", "-C", str(SOURCE_DIR), "symbolic-ref", "--quiet",
+             "--short", "refs/remotes/origin/HEAD"],
             capture_output=True, text=True,
         )
-        if result.returncode != 0 and not pre_existed:
-            # A failed clone can leave a partial directory behind; remove it
-            # so the next attempt starts clean. A directory that existed
-            # before we tried is left alone.
-            shutil.rmtree(SOURCE_DIR, ignore_errors=True)
+        branch = symref.stdout.strip() or "origin/main"
+
+        for cmd in (
+            ["git", "-C", str(SOURCE_DIR), "reset", "--hard", branch],
+            ["git", "-C", str(SOURCE_DIR), "clean", "-fd"],
+        ):
+            result = subprocess.run(cmd, capture_output=True, text=True)
+            if result.returncode != 0:
+                # A failed reset/clean is a local checkout problem, not a
+                # network problem; report the real git error.
+                detail = (result.stderr or result.stdout).strip()
+                die(f"Failed to sync source checkout at {SOURCE_DIR}.\n"
+                    f"git said: {detail}")
+        return
+
+    pre_existed = SOURCE_DIR.exists()
+    SOURCE_DIR.parent.mkdir(parents=True, exist_ok=True)
+    result = subprocess.run(
+        ["git", "clone", CANONICAL_REPO, str(SOURCE_DIR)],
+        capture_output=True, text=True,
+    )
+    if result.returncode != 0 and not pre_existed:
+        # A failed clone can leave a partial directory behind; remove it
+        # so the next attempt starts clean. A directory that existed
+        # before we tried is left alone.
+        shutil.rmtree(SOURCE_DIR, ignore_errors=True)
     if result.returncode != 0:
         detail = (result.stderr or result.stdout).strip()
         die(f"Cannot reach {CANONICAL_REPO}. Check your network and try again.\n"
