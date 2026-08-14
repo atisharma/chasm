@@ -24,7 +24,11 @@ async function gitCommit(cwd: string, message: string): Promise<string> {
         await execFileAsync("git", ["-C", cwd, "commit", "--quiet", "-m", message], { timeout: 5000 });
         return message;
     } catch (err: any) {
-        if (err?.stderr?.includes("nothing to commit")) {
+        // git writes "nothing to commit, working tree clean" to stdout (and
+        // sometimes "nothing added to commit" to stderr) and exits 1. Check both
+        // streams so a no-op save is treated as "no changes", not a failure.
+        const output = `${err?.stdout ?? ""}${err?.stderr ?? ""}`;
+        if (output.includes("nothing to commit")) {
             return "no changes";
         }
         throw err;

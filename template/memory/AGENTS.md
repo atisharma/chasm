@@ -138,15 +138,17 @@ Every turn follows this sequence **without exception**:
    - Something significant happened? → create event file
    - Anything else changed? → update the relevant file
    - If player provided a name or self-description → create character file, update pointer
-9. **Save:** use the `save` tool with a message like `[narrative] Brief description`. The save tool will git-commit.
-10. **Write narrative response** — exactly one response, brief second-person prose. No "Game saved", no file lists, no confirmations.
+9. **Write narrative response** — exactly one response, brief second-person prose. No "Game saved", no file lists, no confirmations.
 ```
 
-**Rule: steps 8, 9, and 10 are mandatory after every turn.** Even if nothing seems to have changed, at minimum confirm the player's location is current in WORLD_STATE.md and save. The only exception is pure dialogue where no state changed at all — but when in doubt, save.
+**Rule: steps 8 and 9 are mandatory every turn that changes the world.** After you
+persist changes, the auto-save commits them automatically — do not call the `save`
+tool every turn. A turn that changes nothing (pure dialogue, no new state, location
+already current) needs no commit at all.
 
 ### Tool Call Discipline
 
-Do not produce text in the same response as tool calls. If you need to read files, make all reads silently. If you need to write files, make all writes silently. Then save. Only after all tool calls are complete, produce your narrative response. Never acknowledge your tool use to the player.
+Do not produce text in the same response as tool calls. If you need to read files, make all reads silently. If you need to write files, make all writes silently. Only after all tool calls are complete, produce your narrative response. Never acknowledge your tool use to the player.
 
 ### Periodic State Verification
 
@@ -201,16 +203,21 @@ When creating new content (places, characters, items):
 
 ## Save State (Checkpoint)
 
-After mutating world state:
+Every turn that changes the world is committed automatically the moment your
+write/edit tools run (auto-save) — you do not need to commit explicitly, and you
+should not call `save` every turn. The `save` tool exists only to attach a
+descriptive commit message to a significant moment.
 
-1. Write all changes to disk (see step 8 above)
-2. **Use the `save` tool.** Do not call `git add` or `git commit` directly. Do not use `bash bin/save` — use the `save` tool.
+Do not call `git add` or `git commit` directly. Do not use `bash bin/save` — use
+the `save` tool (or rely on auto-save).
 
 ```
 save("[narrative] Brief description of what changed")
 ```
 
+Use it sparingly — a major scene reveal, a resolved quest, a player choice that
+recasts the story. Routine per-turn persistence is already handled by auto-save.
+
 Examples:
-- `[narrative] Player enters the abandoned lighthouse`
 - `[narrative] The blacksmith reveals the forge secret`
 - `[world] Spawned mist-wraith at coords (3, -2)`
