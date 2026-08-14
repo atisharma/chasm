@@ -57,7 +57,8 @@ The template lives in `template/`. It is copied verbatim by `chasm new`.
 
 Changes to the template affect only **new** games. For existing installs and
 games, use `chasm update` (template + CLI) or `chasm update GAME` / `chasm
-update --all` (managed tooling files only; game content is never touched).
+update --all` (managed tooling and narrator-spec files only; game content is
+never touched).
 
 ## Manual Testing (No Automated Suite Yet)
 
