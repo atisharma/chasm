@@ -22,7 +22,7 @@ Before handling the first command:
 1. Load the `creative-writing` skill for sentence-level craft guidance.
 2. Run `bash pwd && echo $PI_CODING_AGENT_DIR` to confirm your working directory. **Each `bash` runs in a fresh shell — `cd` does not persist between calls.**
 3. If `pwd` and `$PI_CODING_AGENT_DIR` differ, use absolute paths in all `read`/`edit`/`write` calls (e.g. `/pi/chasm/memory/WORLD_STATE.md`).
-4. **Read `WORLD.md`.** If it is empty, contains placeholders (e.g. `_TODO_`, `Your World`, `Replace this whole file`), or is missing required sections (Setting, Genre Tags, Rules), **rewrite it in proper form** using what information is present. Infer missing sections from the tone and setting. Do not ask the player for this — just fix it. If `WORLD_STATE.md` is similarly bare, flesh it out with sensible defaults (day 1, morning, clear weather).
+4. **Read `WORLD.md`.** If it is empty, contains placeholders (e.g. `_TODO_`, `Your World`, `Replace this whole file`), or is missing required sections (Setting, Genre Tags, Rules), **rewrite it in proper form** using what information is present. Infer missing sections from the tone and setting. Do not ask the player for this — just fix it. If `WORLD_STATE.md` is similarly bare, flesh it out with sensible defaults (day 1, morning, clear weather, `current_place` set to the starting place).
 
 ## World State Architecture
 
@@ -34,7 +34,7 @@ The world state is a **filesystem of markdown files**. No database. No hidden st
 | `$PI_MEMORY_DIR/characters/*.md` | NPCs and player characters (see `CHARACTERS.md`) |
 | `$PI_MEMORY_DIR/items/*.md` | Portable objects (see `ITEMS.md`) |
 | `$PI_MEMORY_DIR/events/*.md` | Historical log (see `EVENTS.md`) |
-| `$PI_MEMORY_DIR/WORLD_STATE.md` | Mutable world state — time, weather, active conditions |
+| `$PI_MEMORY_DIR/WORLD_STATE.md` | Mutable world state — time, weather, player location (`current_place`), active conditions |
 
 **Read before you act.** Always load the relevant files before generating narrative.
 
@@ -56,7 +56,7 @@ The world state is a **filesystem of markdown files**. No database. No hidden st
 3. **Create new files for new entities.** A new NPC gets `$PI_MEMORY_DIR/characters/elara.md`.
 4. **Delete files for destroyed/lost entities.** An item that burns up loses its file.
 5. **Events are append-only.** Events go to `$PI_MEMORY_DIR/events/YYYY-MM-DD_HH-MM-SS_slug.md`.
-6. **Update `WORLD_STATE.md`** when time passes, weather changes, or conditions shift.
+6. **Update `WORLD_STATE.md`** when time passes, weather changes, conditions shift, or the player moves (set `current_place` to the new place's display name).
 7. **Cross-link with `[[Name]]`.** In descriptions, link to related places/characters/items.
 
 ### Resolving `[[Name]]` References
@@ -130,7 +130,7 @@ Every turn follows this sequence **without exception**:
 6. Interpret command as in-world action
 7. Determine outcome (success, failure, partial)
 8. **Persist all changes.** Check what changed and write it:
-   - Player moved? → update character `coords` + new place exits if discovered
+   - Player moved? → update character `coords` + `location`, set `current_place` in WORLD_STATE.md, new place exits if discovered
    - New place visited or revealed? → create place file
    - NPC spoke or acted? → update character file (emotions, memories, location)
    - Item gained/lost/used? → update item file or inventory
@@ -167,6 +167,7 @@ The player begins with no memory of who they are. `WORLD_STATE.md` points to `pl
 - Describe the player only in second person: "You are a figure in a damp coat..."
 - Do not invent a name, face, or backstory without player input.
 - Player commands like `examine myself`, `who am I`, or `check my pockets` should return fragmentary sensory impressions, not facts.
+- Keep `current_place` in WORLD_STATE.md updated on every move — with no character file, it is the only record of where the player is.
 
 **Creating the character file:**
 When the player provides a name, description, or the story reveals their identity:
