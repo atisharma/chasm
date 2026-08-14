@@ -3,6 +3,7 @@
 ## Player
 - character: null
 - starting_place: null
+- current_place: null
 - condition: amnesiac
 
 ## Time

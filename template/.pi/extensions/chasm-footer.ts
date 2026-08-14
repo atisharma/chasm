@@ -24,6 +24,33 @@ interface WorldState {
     inventoryCount: number;
 }
 
+// Resolve the player character file's `location:` field. The character
+// pointer may be absolute, relative to the memory dir, quoted, bracketed,
+// or a stale absolute path from another machine (e.g. /pi/chasm/memory/...)
+// — the last resort re-roots everything after "memory/" onto memDir.
+function characterLocation(memDir: string, get: (key: string) => string): string {
+    const raw = get("character");
+    if (!raw || raw === "null") return "";
+    const cleaned = raw.replace(/^["']|["']$/g, "").replace(/\[\[|\]\]/g, "");
+    const candidates = [
+        cleaned,
+        nodePath.join(memDir, cleaned),
+        nodePath.join(memDir, cleaned.replace(/^.*?memory\//, "")),
+    ];
+    for (const p of candidates) {
+        try {
+            if (p && fs.existsSync(p)) {
+                const text = fs.readFileSync(p, "utf-8");
+                const match = text.match(/^location:\s*"?(.+?)"?\s*$/m);
+                if (match) return match[1];
+            }
+        } catch {
+            // Unreadable candidate — try the next one
+        }
+    }
+    return "";
+}
+
 function readWorldState(): WorldState {
     const memDir = process.env.PI_MEMORY_DIR ?? "";
     const defaults: WorldState = {
@@ -57,7 +84,7 @@ function readWorldState(): WorldState {
                 return match ? match[1].trim().replace(/`/g, "").replace(/\s+#.+$/, "") : "";
             };
 
-            const location = get("current_place") || get("starting_place") || get("location");
+            const location = get("current_place") || characterLocation(memDir, get) || get("starting_place") || get("location");
             if (location) defaults.location = location.replace(/\[\[|\]\]/g, "");
 
             const day = get("day");
