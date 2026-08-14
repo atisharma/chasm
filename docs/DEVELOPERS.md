@@ -6,7 +6,7 @@ This complements `ARCHITECTURE.md`. Read that first for how the system works.
 
 | Component | Language | Location |
 |-----------|----------|----------|
-| CLI tool (new, play, list, delete) | Python 3 | `chasm` |
+| CLI tool (new, play, validate, list, delete, update) | Python 3 | `chasm` |
 | Game bootstrap Q&A | Python 3 | `template/bin/bootstrap` |
 | In-game save script | Shell / Python | `template/bin/save` |
 | Pi session extensions | TypeScript | `template/.pi/extensions/` |
@@ -30,7 +30,9 @@ Extensions hook pi events such as `session_start`, `agent_start`, etc.
 
 ## Working on the CLI (Python)
 
-The `chasm` binary is static and relocatable. It computes its own install path from `__file__` rather than assuming a fixed prefix.
+The `chasm` binary is static and relocatable. It resolves game locations from
+`$XDG_DATA_HOME` (default `~/.local/share/chasm/`), not from its own install
+path.
 
 ### XDG directories used
 
@@ -53,14 +55,16 @@ The template lives in `template/`. It is copied verbatim by `chasm new`.
 - `template/bin/bootstrap` — interactive script that writes `WORLD.md`, `WORLD_STATE.md`, and the first place
 - `template/memory/` — narrator spec (`AGENTS.md`) and format docs (`CHARACTERS.md`, etc.)
 
-Changes to the template affect only **new** games. There is no automatic update path for existing worlds.
+Changes to the template affect only **new** games. For existing installs and
+games, use `chasm update` (template + CLI) or `chasm update GAME` / `chasm
+update --all` (managed tooling files only; game content is never touched).
 
 ## Manual Testing (No Automated Suite Yet)
 
 Before submitting changes, verify manually:
 
-1. **Install / dry-run:** `XDG_DATA_HOME=/tmp/chasm-test ./install.sh` and inspect the result.
-2. **Create a world:** `XDG_DATA_HOME=/tmp/chasm-test ./chasm new test-world` — check the symlink target of `models.json`.
+1. **Install / dry-run:** `XDG_DATA_HOME=/tmp/chasm-test/share ./install.sh --prefix /tmp/chasm-test` and inspect the result. (The CLI reads `$XDG_DATA_HOME/chasm`, while `install.sh` writes to `$PREFIX/share/chasm`; these coincide only when `PREFIX` is `~/.local` or chosen to match, as here.)
+2. **Create a world:** `XDG_DATA_HOME=/tmp/chasm-test/share /tmp/chasm-test/bin/chasm new test-world` — check the symlink target of `models.json`.
 3. **Bootstrap a world:** `cd` into the game and run `./template/bin/bootstrap` interactively. Verify `memory/WORLD.md`, `memory/WORLD_STATE.md`, and `memory/places/*.md` are written correctly.
 4. **Extension load:** Start `pi` inside the game directory. Confirm the footer renders and tools are compact.
 

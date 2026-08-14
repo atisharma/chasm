@@ -13,6 +13,24 @@ XDG_DATA_HOME = Path(os.environ.get("XDG_DATA_HOME", Path.home() / ".local/share
 CHASM_DATA = XDG_DATA_HOME / "chasm"
 TEMPLATE_DIR = CHASM_DATA / "template"
 GAMES_DIR = CHASM_DATA / "games"
+SOURCE_DIR = CHASM_DATA / "chasm"
+CANONICAL_REPO = os.environ.get(
+    "CHASM_REPO_URL", "https://github.com/atisharma/chasm.git"
+)
+
+# Managed files: came from the template, safe to overwrite on update.
+# Everything else (memory/**, models.json, APPEND_SYSTEM.md, sessions/,
+# .git/) is game-owned and never touched by 'chasm update GAME'.
+MANAGED_FILES = [
+    "settings.json",
+    "bin/bootstrap",
+    "bin/save",
+    "bin/chasm-validate",
+    ".gitignore",
+]
+# The extensions directory is managed wholesale: *.ts files the template no
+# longer ships are removed as well as refreshed.
+MANAGED_EXT_DIR = Path(".pi") / "extensions"
 
 
 def die(msg: str) -> None:
@@ -30,6 +48,11 @@ def print_help():
     print("  validate [GAME_NAME]          Validate world integrity (defaults to cwd)")
     print("  delete GAME_NAME [--force]    Destroy a game workspace")
     print("  list                          List all games")
+    print("  update [GAME] [--all] [--force]")
+    print("                                update: refresh installed template + CLI")
+    print("                                update GAME: refresh managed tooling files in a game")
+    print("                                update --all: refresh tooling in every game")
+    print("                                --force: overwrite locally-modified tooling files")
     print("  --help                        Show this help text")
     print("")
     print("Examples:")
@@ -37,6 +60,8 @@ def print_help():
     print("  chasm play sunken-quarter")
     print("  chasm delete sunken-quarter")
     print("  chasm list")
+    print("  chasm update")
+    print("  chasm update sunken-quarter")
 
 
 def cmd_validate(args: argparse.Namespace) -> None:
@@ -194,6 +219,243 @@ def cmd_list(_: argparse.Namespace) -> None:
         print(f"{name:20}  {created:12}  {title}")
 
 
+def _atomic_copy(src: Path, dst: Path) -> None:
+    """Copy src over dst via temp-then-rename so a failure mid-copy never
+    leaves a half-written file in place."""
+    dst.parent.mkdir(parents=True, exist_ok=True)
+    tmp = dst.with_name(dst.name + ".chasm-tmp")
+    shutil.copy2(src, tmp)
+    os.replace(tmp, dst)
+
+
+def _ensure_source_checkout() -> None:
+    """Clone or pull the canonical repo into $CHASM_DATA/chasm.
+
+    Web installs clone there too, but manual installs have no recorded
+    source location, so 'chasm update' maintains its own checkout.
+    """
+    if (SOURCE_DIR / ".git").is_dir():
+        result = subprocess.run(
+            ["git", "-C", str(SOURCE_DIR), "pull", "--ff-only"],
+            capture_output=True, text=True,
+        )
+    else:
+        pre_existed = SOURCE_DIR.exists()
+        SOURCE_DIR.parent.mkdir(parents=True, exist_ok=True)
+        result = subprocess.run(
+            ["git", "clone", CANONICAL_REPO, str(SOURCE_DIR)],
+            capture_output=True, text=True,
+        )
+        if result.returncode != 0 and not pre_existed:
+            # A failed clone can leave a partial directory behind; remove it
+            # so the next attempt starts clean. A directory that existed
+            # before we tried is left alone.
+            shutil.rmtree(SOURCE_DIR, ignore_errors=True)
+    if result.returncode != 0:
+        detail = (result.stderr or result.stdout).strip()
+        die(f"Cannot reach {CANONICAL_REPO}. Check your network and try again.\n"
+            f"git said: {detail}")
+
+
+def _refresh_template() -> int:
+    """Mirror the source checkout's template/ into $CHASM_DATA/template.
+    Returns the number of files changed."""
+    src_root = SOURCE_DIR / "template"
+    if not src_root.is_dir():
+        die(f"Source checkout at {SOURCE_DIR} has no template/ directory.")
+
+    changed = 0
+    for src in sorted(src_root.rglob("*")):
+        if src.is_dir():
+            continue
+        dst = TEMPLATE_DIR / src.relative_to(src_root)
+        if dst.is_file() and dst.read_bytes() == src.read_bytes():
+            continue
+        _atomic_copy(src, dst)
+        changed += 1
+
+    # Remove files the template no longer ships.
+    if TEMPLATE_DIR.is_dir():
+        for dst in sorted(TEMPLATE_DIR.rglob("*"), reverse=True):
+            rel = dst.relative_to(TEMPLATE_DIR)
+            if dst.is_dir():
+                if not any(dst.iterdir()):
+                    dst.rmdir()
+            elif not (src_root / rel).exists():
+                dst.unlink()
+                changed += 1
+    return changed
+
+
+def cmd_update_self(_: argparse.Namespace) -> None:
+    _ensure_source_checkout()
+    changed = _refresh_template()
+
+    cli_src = SOURCE_DIR / "chasm"
+    cli_dst = Path(__file__).resolve()
+    cli_changed = False
+    if cli_src.is_file() and not cli_dst.is_relative_to(SOURCE_DIR) and not (
+        cli_dst.is_file() and cli_dst.read_bytes() == cli_src.read_bytes()
+    ):
+        # Safe even though this script is running: Python loaded the whole
+        # file at startup, and os.replace swaps the inode, not the contents.
+        # A checkout's own ./chasm is never rewritten over itself.
+        _atomic_copy(cli_src, cli_dst)
+        os.chmod(cli_dst, 0o755)
+        cli_changed = True
+
+    if changed or cli_changed:
+        print(f"Updated template + CLI from {CANONICAL_REPO}")
+    else:
+        print(f"Already up to date with {CANONICAL_REPO}")
+    print(f"  (config at {CHASM_DATA / 'models.json'} preserved)")
+    if GAMES_DIR.is_dir() and any(GAMES_DIR.iterdir()):
+        print("  Run 'chasm update --all' to refresh existing games.")
+
+
+def _is_locally_modified(game_dir: Path, rel: str) -> bool:
+    """True if rel differs from the game's last commit (modified or
+    untracked). Callers only invoke this when the game is a git repo."""
+    result = subprocess.run(
+        ["git", "-C", str(game_dir), "status", "--porcelain", "--", rel],
+        capture_output=True, text=True,
+    )
+    return result.returncode == 0 and bool(result.stdout.strip())
+
+
+def _is_tracked(game_dir: Path, rel: str) -> bool:
+    result = subprocess.run(
+        ["git", "-C", str(game_dir), "ls-files", "--error-unmatch", "--", rel],
+        capture_output=True,
+    )
+    return result.returncode == 0
+
+
+def cmd_update_game(name: str, force: bool) -> None:
+    if (GAMES_DIR / name).is_dir():
+        target = GAMES_DIR / name
+    elif Path(name).is_dir():
+        target = Path(name).resolve()
+    else:
+        die(f"Game '{name}' not found.")
+
+    if not TEMPLATE_DIR.is_dir():
+        die(f"Template not found at {TEMPLATE_DIR}. Run 'chasm update' first.")
+
+    is_git = (target / ".git").is_dir()
+    if not is_git:
+        print(f"Warning: {target} is not a git repo; cannot detect local "
+              "edits or commit. Continuing.")
+
+    changed: list[str] = []
+    removed: list[str] = []
+    skipped: list[str] = []
+
+    def refresh(rel: str, src: Path, dst: Path) -> None:
+        if dst.is_file() and dst.read_bytes() == src.read_bytes():
+            return
+        if not force and is_git and _is_locally_modified(target, rel):
+            print(f"SKIP  {rel} (modified since scaffold)")
+            skipped.append(rel)
+            return
+        _atomic_copy(src, dst)
+        changed.append(rel)
+
+    for rel in MANAGED_FILES:
+        src = TEMPLATE_DIR / rel
+        if src.is_file():
+            refresh(rel, src, target / rel)
+
+    src_ext = TEMPLATE_DIR / MANAGED_EXT_DIR
+    dst_ext = target / MANAGED_EXT_DIR
+    shipped = set()
+    if src_ext.is_dir():
+        for src in sorted(src_ext.glob("*.ts")):
+            shipped.add(src.name)
+            rel = str(MANAGED_EXT_DIR / src.name)
+            refresh(rel, src, dst_ext / src.name)
+    if dst_ext.is_dir():
+        # Drop extensions the template no longer ships.
+        for dst in sorted(dst_ext.glob("*.ts")):
+            if dst.name in shipped:
+                continue
+            rel = str(MANAGED_EXT_DIR / dst.name)
+            if not force and is_git and _is_locally_modified(target, rel):
+                print(f"SKIP  {rel} (modified since scaffold)")
+                skipped.append(rel)
+                continue
+            dst.unlink()
+            removed.append(rel)
+
+    if changed or removed:
+        if is_git:
+            # Stage what exists; deletions of never-tracked files have
+            # nothing to stage and drop out here.
+            existing = [r for r in changed + removed if (target / r).exists()]
+            gone_tracked = [r for r in removed
+                            if not (target / r).exists() and _is_tracked(target, r)]
+            if existing:
+                subprocess.run(
+                    ["git", "-C", str(target), "add", "-A", "--", *existing],
+                    check=True,
+                )
+            if gone_tracked:
+                subprocess.run(
+                    ["git", "-C", str(target), "rm", "-r", "--cached",
+                     "--quiet", "--ignore-unmatch", "--", *gone_tracked],
+                    check=True,
+                )
+            # Path-limited commit: commits exactly these paths and leaves
+            # any unrelated staged work in the game untouched. A --force
+            # overwrite that restores a file to its last-committed content
+            # leaves nothing staged for these paths, so skip the commit.
+            commit_paths = existing + gone_tracked
+            if commit_paths:
+                staged = subprocess.run(
+                    ["git", "-C", str(target), "diff", "--cached",
+                     "--quiet", "--", *commit_paths],
+                )
+                if staged.returncode != 0:
+                    subprocess.run(
+                        ["git", "-C", str(target), "commit", "--quiet",
+                         "-m", "[chasm] Update template files", "--",
+                         *commit_paths],
+                        check=True,
+                    )
+        if changed:
+            print(f"Updated {name}: {', '.join(changed)}")
+        if removed:
+            print(f"Removed from {name}: {', '.join(removed)}")
+        print("  (memory/, models.json, APPEND_SYSTEM.md untouched)")
+    elif skipped:
+        print(f"Nothing updated in {name} (all changed files skipped; "
+              "use --force to overwrite).")
+    else:
+        print(f"{name} is already up to date.")
+
+
+def cmd_update(args: argparse.Namespace) -> None:
+    if shutil.which("git") is None:
+        die("git is required for 'chasm update'.")
+    if args.all and args.name:
+        die("'chasm update --all' does not take a game name.")
+    if args.force and not (args.all or args.name):
+        die("--force requires a game name or --all.")
+
+    if args.name:
+        cmd_update_game(args.name, args.force)
+    elif args.all:
+        games = sorted(p for p in GAMES_DIR.iterdir() if p.is_dir()) \
+            if GAMES_DIR.is_dir() else []
+        if not games:
+            print("No games found.")
+            return
+        for game in games:
+            cmd_update_game(game.name, args.force)
+    else:
+        cmd_update_self(args)
+
+
 def main():
     parser = argparse.ArgumentParser(add_help=False)
     subparsers = parser.add_subparsers(dest="command")
@@ -212,6 +474,13 @@ def main():
     p_delete = subparsers.add_parser("delete")
     p_delete.add_argument("name")
     p_delete.add_argument("--force", action="store_true", help="Skip confirmation")
+
+    p_update = subparsers.add_parser("update")
+    p_update.add_argument("name", nargs="?", default="")
+    p_update.add_argument("--all", action="store_true",
+                          help="Update managed files in every game")
+    p_update.add_argument("--force", action="store_true",
+                          help="Overwrite locally-modified managed files")
 
     subparsers.add_parser("list")
 
@@ -238,6 +507,8 @@ def main():
         cmd_validate(args)
     elif args.command == "delete":
         cmd_delete(args)
+    elif args.command == "update":
+        cmd_update(args)
     elif args.command == "list":
         cmd_list(args)
     else:

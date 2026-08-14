@@ -7,5 +7,7 @@ __pycache__/
 *.pyc
 .DS_Store
 
+SPEC.md
+
 # pi-mem session logs (prevent autocommit noise)
 sessions/
