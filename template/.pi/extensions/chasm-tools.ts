@@ -1,92 +1,118 @@
 /**
- * Chasm Tools — compact rendering for built-in file tools.
+ * Chasm Tools — machinery-invisible rendering for the built-in file tools.
  *
- * Replaces the built-in read, write, and edit tools with versions that delegate
- * execution to the originals (via createReadTool/createWriteTool/createEditTool)
- * but render compact single-line output instead of full file contents.
+ * Replaces the built-in read, write, edit, and bash tools with versions that
+ * delegate execution to the originals (via createReadTool/createWriteTool/
+ * createEditTool/createBashTool) but render nothing in the default (collapsed)
+ * transcript view. The player sees only narrative prose; tool activity is
+ * revealed on demand with Ctrl+O (expanded), which shows the call caption and
+ * the full output.
  *
- * The model still gets full content, diffs, and success confirmations.
- * The player sees only a brief summary per tool call. Expand with Ctrl+O.
+ * Errors are never hidden: a failed tool renders in the transcript even when
+ * collapsed, so the player is not left staring at silent breakage. Partial
+ * ("running…") frames render nothing, so a turn does not flicker between tool
+ * states.
  *
- * Based on the built-in-tool-renderer.ts example from pi.
+ * The model still receives full content, diffs, and success confirmations.
+ *
+ * renderShell "self" is required: it skips the built-in padded tool box, so a
+ * tool whose renderers produce zero lines renders nothing at all.
  */
 
 import type { BashToolDetails, EditToolDetails, ExtensionAPI, ReadToolDetails } from "@earendil-works/pi-coding-agent";
 import { createBashTool, createEditTool, createReadTool, createWriteTool } from "@earendil-works/pi-coding-agent";
 import { Text } from "@earendil-works/pi-tui";
 
+/** A component that renders zero lines. With renderShell "self" the tool row disappears. */
+function hidden(): Text {
+    return new Text("", 0, 0);
+}
+
+/** First text content block of a tool result, split into lines. */
+function textLines(result: { content: { type: string; text?: string }[] }): string[] {
+    const block = result.content.find((c) => c.type === "text");
+    if (!block || block.type !== "text" || !block.text) return [];
+    return block.text.split("\n");
+}
+
+/** Whether a result is an error: flagged by the runtime, or textually prefixed. */
+function isErrorResult(result: { content: { type: string; text?: string }[] }, context: { isError?: boolean } | undefined): boolean {
+    if (context?.isError) return true;
+    const first = textLines(result)[0] ?? "";
+    return first.startsWith("Error");
+}
+
 export default function (pi: ExtensionAPI) {
     const cwd = process.cwd();
 
-    // --- Bash tool: command + exit code ---
+    // --- Bash tool: nothing unless error or expanded ---
     const originalBash = createBashTool(cwd);
     pi.registerTool({
         name: "bash",
         label: "bash",
         description: originalBash.description,
         parameters: originalBash.parameters,
+        renderShell: "self",
 
         async execute(toolCallId, params, signal, onUpdate) {
             return originalBash.execute(toolCallId, params, signal, onUpdate);
         },
 
-        renderCall(args, theme) {
+        renderCall(args, theme, context) {
+            if (!context?.expanded) return hidden();
             let text = theme.fg("toolTitle", theme.bold("$ "));
             const cmd = args.command.length > 80 ? `${args.command.slice(0, 77)}...` : args.command;
             text += theme.fg("muted", cmd);
             return new Text(text, 0, 0);
         },
 
-        renderResult(result, { expanded, isPartial }, theme) {
-            if (isPartial) return new Text(theme.fg("dim", "running…"), 0, 0);
+        renderResult(result, { expanded, isPartial }, theme, context) {
+            if (isPartial) return hidden();
 
-            const details = result.details as BashToolDetails | undefined;
-            const content = result.content[0];
-            const output = content?.type === "text" ? content.text : "";
-
+            const lines = textLines(result);
+            const output = lines.join("\n");
             const exitMatch = output.match(/exit code: (\d+)/);
             const exitCode = exitMatch ? parseInt(exitMatch[1], 10) : null;
-            const lineCount = output.split("\n").filter((l: string) => l.trim()).length;
 
-            let text = "";
-            if (exitCode === 0 || exitCode === null) {
-                text += theme.fg("dim", `done`);
-            } else {
-                text += theme.fg("error", `exit ${exitCode}`);
+            // Errors are always visible, even collapsed.
+            if (exitCode !== null && exitCode !== 0) {
+                let text = theme.fg("error", `exit ${exitCode}`);
+                const firstLine = lines.find((l: string) => l.trim() && !l.startsWith("exit code:")) ?? "";
+                if (firstLine) text += theme.fg("dim", ` — ${firstLine.slice(0, 120)}`);
+                return new Text(text, 0, 0);
             }
-            text += theme.fg("dim", ` (${lineCount} lines)`);
-
-            if (details?.truncation?.truncated) {
-                text += theme.fg("dim", " [truncated]");
+            if (isErrorResult(result, context)) {
+                return new Text(theme.fg("error", lines[0] ?? "failed"), 0, 0);
             }
 
-            if (expanded) {
-                const lines = output.split("\n").slice(0, 20);
-                for (const line of lines) {
-                    text += `\n${theme.fg("dim", line)}`;
-                }
-                if (output.split("\n").length > 20) {
-                    text += `\n${theme.fg("dim", `… ${output.split("\n").length - 20} more`)}`;
-                }
-            }
+            if (!expanded) return hidden();
 
-            return new Text(text, 0, 0);
+            const body: string[] = [];
+            for (const line of lines.slice(0, 20)) {
+                body.push(theme.fg("dim", line));
+            }
+            if (lines.length > 20) {
+                body.push(theme.fg("dim", `… ${lines.length - 20} more`));
+            }
+            return new Text(body.length ? body.join("\n") : "done", 0, 0);
         },
     });
 
-    // --- Read tool: path + line count ---
+    // --- Read tool ---
     const originalRead = createReadTool(cwd);
     pi.registerTool({
         name: "read",
         label: "read",
         description: originalRead.description,
         parameters: originalRead.parameters,
+        renderShell: "self",
 
         async execute(toolCallId, params, signal, onUpdate) {
             return originalRead.execute(toolCallId, params, signal, onUpdate);
         },
 
-        renderCall(args, theme) {
+        renderCall(args, theme, context) {
+            if (!context?.expanded) return hidden();
             let text = theme.fg("toolTitle", theme.bold("read "));
             text += theme.fg("muted", args.path);
             if (args.offset || args.limit) {
@@ -98,54 +124,60 @@ export default function (pi: ExtensionAPI) {
             return new Text(text, 0, 0);
         },
 
-        renderResult(result, { expanded, isPartial }, theme) {
-            if (isPartial) return new Text(theme.fg("dim", "reading…"), 0, 0);
+        renderResult(result, { expanded, isPartial }, theme, context) {
+            if (isPartial) return hidden();
 
             const details = result.details as ReadToolDetails | undefined;
             const content = result.content[0];
 
             if (content?.type === "image") {
-                return new Text(theme.fg("dim", "image loaded"), 0, 0);
+                return expanded ? new Text(theme.fg("dim", "image loaded"), 0, 0) : hidden();
             }
 
             if (content?.type !== "text") {
-                return new Text("", 0, 0);
+                return expanded ? new Text(theme.fg("dim", "(no text output)"), 0, 0) : hidden();
             }
 
-            const lineCount = content.text.split("\n").length;
-            let text = theme.fg("dim", `${lineCount} lines`);
+            const lines = content.text.split("\n");
 
+            // Errors are always visible, even collapsed.
+            if (isErrorResult(result, context)) {
+                return new Text(theme.fg("error", lines[0] ?? "read failed"), 0, 0);
+            }
+
+            if (!expanded) return hidden();
+
+            const body: string[] = [];
+            let text = theme.fg("dim", `${lines.length} lines`);
             if (details?.truncation?.truncated) {
                 text += theme.fg("dim", ` of ${details.truncation.totalLines}`);
             }
-
-            if (expanded) {
-                const lines = content.text.split("\n").slice(0, 20);
-                for (const line of lines) {
-                    text += `\n${theme.fg("dim", line)}`;
-                }
-                if (lineCount > 20) {
-                    text += `\n${theme.fg("dim", `… ${lineCount - 20} more`)}`;
-                }
+            body.push(text);
+            for (const line of lines.slice(0, 20)) {
+                body.push(theme.fg("dim", line));
             }
-
-            return new Text(text, 0, 0);
+            if (lines.length > 20) {
+                body.push(theme.fg("dim", `… ${lines.length - 20} more`));
+            }
+            return new Text(body.join("\n"), 0, 0);
         },
     });
 
-    // --- Write tool: path + line count ---
+    // --- Write tool ---
     const originalWrite = createWriteTool(cwd);
     pi.registerTool({
         name: "write",
         label: "write",
         description: originalWrite.description,
         parameters: originalWrite.parameters,
+        renderShell: "self",
 
         async execute(toolCallId, params, signal, onUpdate) {
             return originalWrite.execute(toolCallId, params, signal, onUpdate);
         },
 
-        renderCall(args, theme) {
+        renderCall(args, theme, context) {
+            if (!context?.expanded) return hidden();
             let text = theme.fg("toolTitle", theme.bold("write "));
             text += theme.fg("muted", args.path);
             const lineCount = args.content.split("\n").length;
@@ -153,19 +185,25 @@ export default function (pi: ExtensionAPI) {
             return new Text(text, 0, 0);
         },
 
-        renderResult(result, { isPartial }, theme) {
-            if (isPartial) return new Text(theme.fg("dim", "writing…"), 0, 0);
+        renderResult(result, { expanded, isPartial }, theme, context) {
+            if (isPartial) return hidden();
 
-            const content = result.content[0];
-            if (content?.type === "text" && content.text.startsWith("Error")) {
-                return new Text(theme.fg("error", content.text.split("\n")[0]), 0, 0);
+            const lines = textLines(result);
+            if (isErrorResult(result, context)) {
+                return new Text(theme.fg("error", lines[0] ?? "write failed"), 0, 0);
             }
 
-            return new Text(theme.fg("dim", "written"), 0, 0);
+            if (!expanded) return hidden();
+
+            const body: string[] = [];
+            for (const line of lines.slice(0, 20)) {
+                body.push(theme.fg("dim", line));
+            }
+            return new Text(body.length ? body.join("\n") : "written", 0, 0);
         },
     });
 
-    // --- Edit tool: path + diff stats ---
+    // --- Edit tool ---
     const originalEdit = createEditTool(cwd);
     pi.registerTool({
         name: "edit",
@@ -178,27 +216,29 @@ export default function (pi: ExtensionAPI) {
             return originalEdit.execute(toolCallId, params, signal, onUpdate);
         },
 
-        renderCall(args, theme) {
+        renderCall(args, theme, context) {
+            if (!context?.expanded) return hidden();
             let text = theme.fg("toolTitle", theme.bold("edit "));
             text += theme.fg("muted", args.path);
             return new Text(text, 0, 0);
         },
 
-        renderResult(result, { expanded, isPartial }, theme) {
-            if (isPartial) return new Text(theme.fg("dim", "editing…"), 0, 0);
+        renderResult(result, { expanded, isPartial }, theme, context) {
+            if (isPartial) return hidden();
 
-            const details = result.details as EditToolDetails | undefined;
-            const content = result.content[0];
-
-            if (content?.type === "text" && content.text.startsWith("Error")) {
-                return new Text(theme.fg("error", content.text.split("\n")[0]), 0, 0);
+            const lines = textLines(result);
+            if (isErrorResult(result, context)) {
+                return new Text(theme.fg("error", lines[0] ?? "edit failed"), 0, 0);
             }
 
+            if (!expanded) return hidden();
+
+            const details = result.details as EditToolDetails | undefined;
             if (!details?.diff) {
                 return new Text(theme.fg("dim", "applied"), 0, 0);
             }
 
-            // Count additions and removals from the diff
+            // Colour the diff lines.
             const diffLines = details.diff.split("\n");
             let additions = 0;
             let removals = 0;
@@ -207,24 +247,20 @@ export default function (pi: ExtensionAPI) {
                 if (line.startsWith("-") && !line.startsWith("---")) removals++;
             }
 
-            let text = theme.fg("dim", `+${additions}/-${removals}`);
-
-            if (expanded) {
-                for (const line of diffLines.slice(0, 30)) {
-                    if (line.startsWith("+") && !line.startsWith("+++")) {
-                        text += `\n${theme.fg("success", line)}`;
-                    } else if (line.startsWith("-") && !line.startsWith("---")) {
-                        text += `\n${theme.fg("error", line)}`;
-                    } else {
-                        text += `\n${theme.fg("dim", line)}`;
-                    }
-                }
-                if (diffLines.length > 30) {
-                    text += `\n${theme.fg("dim", `… ${diffLines.length - 30} more`)}`;
+            const body: string[] = [theme.fg("dim", `+${additions}/-${removals}`)];
+            for (const line of diffLines.slice(0, 30)) {
+                if (line.startsWith("+") && !line.startsWith("+++")) {
+                    body.push(theme.fg("success", line));
+                } else if (line.startsWith("-") && !line.startsWith("---")) {
+                    body.push(theme.fg("error", line));
+                } else {
+                    body.push(theme.fg("dim", line));
                 }
             }
-
-            return new Text(text, 0, 0);
+            if (diffLines.length > 30) {
+                body.push(theme.fg("dim", `… ${diffLines.length - 30} more`));
+            }
+            return new Text(body.join("\n"), 0, 0);
         },
     });
 }
