@@ -71,30 +71,34 @@ export default function (pi: ExtensionAPI) {
 
             const lines = textLines(result);
             const output = lines.join("\n");
-            const exitMatch = output.match(/exit code: (\d+)/);
-            const exitCode = exitMatch ? parseInt(exitMatch[1], 10) : null;
 
-            // Errors are always visible, even collapsed.
-            if (exitCode !== null && exitCode !== 0) {
-                let text = theme.fg("error", `exit ${exitCode}`);
-                const firstLine = lines.find((l: string) => l.trim() && !l.startsWith("exit code:")) ?? "";
-                if (firstLine) text += theme.fg("dim", ` — ${firstLine.slice(0, 120)}`);
+            // Bash reports failure by throwing; the message is
+            // "…output…\n\nCommand exited with code N" (or aborted/timeout),
+            // where "(no output)" is a placeholder, never real content.
+            const statusMatch = output.match(/Command (exited with code (\d+)|aborted|timed out)/);
+            if (context?.isError || statusMatch) {
+                let status: string;
+                if (statusMatch) {
+                    if (statusMatch[2]) status = `exit ${statusMatch[2]}`;
+                    else if (output.includes("aborted")) status = "aborted";
+                    else status = "timed out";
+                } else {
+                    status = "failed";
+                }
+                const firstLine = lines.find((l: string) => l.trim() && !l.startsWith("Command ") && l !== "(no output)") ?? "";
+                let text = theme.fg("error", status);
+                if (firstLine) text += theme.fg("dim", ` - ${firstLine.slice(0, 120)}`);
                 return new Text(text, 0, 0);
-            }
-            if (isErrorResult(result, context)) {
-                return new Text(theme.fg("error", lines[0] ?? "failed"), 0, 0);
             }
 
             if (!expanded) return hidden();
 
-            const body: string[] = [];
-            for (const line of lines.slice(0, 20)) {
-                body.push(theme.fg("dim", line));
-            }
-            if (lines.length > 20) {
-                body.push(theme.fg("dim", `… ${lines.length - 20} more`));
-            }
-            return new Text(body.length ? body.join("\n") : "done", 0, 0);
+            // Expanded view: raw output minus empties and the no-output placeholder.
+            const significant = lines.filter((l: string) => l.trim());
+            const cleaned = significant.filter((l: string) => l !== "(no output)");
+            const body = cleaned.slice(0, 20).map((l: string) => theme.fg("dim", l));
+            if (significant.length > 20) body.push(theme.fg("dim", `… ${significant.length - 20} more`));
+            return new Text(body.length ? body.join("\n") : theme.fg("dim", "no output"), 0, 0);
         },
     });
 

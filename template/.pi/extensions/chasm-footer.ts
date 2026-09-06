@@ -122,6 +122,10 @@ function readWorldState(): WorldState {
 export default function (pi: ExtensionAPI) {
     pi.on("session_start", async (_event, ctx) => {
         ctx.ui.setToolsExpanded(false);
+        // Hidden thinking blocks render as zero lines instead of one "Thinking..."
+        // row per reasoning run (reasoning stays invisible like tool activity).
+        // Ctrl+T still reveals it (and new runs honour the toggle).
+        ctx.ui.setHiddenThinkingLabel("");
         ctx.ui.setFooter((tui, theme, footerData) => {
             const unsub = footerData.onBranchChange(() => tui.requestRender());
 
