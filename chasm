@@ -24,7 +24,10 @@ CANONICAL_REPO = os.environ.get(
 # still preserved (see _is_locally_modified), so a per-game customisation is
 # only overwritten if it was committed and the user runs an explicit update.
 # Everything else is game-owned and never touched by 'chasm update GAME':
-# world content (memory/* except AGENTS.md), models.json, sessions/, .git/.
+# world content (memory/* except the managed spec files), models.json,
+# sessions/, .git/. PRINCIPLES.md and .pi-mem.json join AGENTS.md here
+# because they are narrator spec and injection config, never written to
+# in-game (unlike places, characters, items, and events).
 MANAGED_FILES = [
     "settings.json",
     "bin/bootstrap",
@@ -32,6 +35,8 @@ MANAGED_FILES = [
     "bin/chasm-validate",
     ".gitignore",
     "memory/AGENTS.md",
+    "memory/PRINCIPLES.md",
+    "memory/.pi-mem.json",
     "APPEND_SYSTEM.md",
 ]
 # The extensions directory is managed wholesale: *.ts files the template no

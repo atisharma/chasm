@@ -1,5 +1,5 @@
 {
   "searchDirs": ["places", "characters", "items", "events"],
-  "contextFiles": ["AGENTS.md", "WORLD.md", "PLACES.md", "CHARACTERS.md", "ITEMS.md", "QUESTS.md", "EVENTS.md", "PLAYER.md", "WORLD_STATE.md"],
+  "contextFiles": ["AGENTS.md", "PRINCIPLES.md", "WORLD.md", "PLACES.md", "CHARACTERS.md", "ITEMS.md", "QUESTS.md", "EVENTS.md", "PLAYER.md", "WORLD_STATE.md"],
   "autocommit": true
 }

@@ -17,7 +17,9 @@ interprets your commands, and writes the story back:
 Everything is visible. Everything is editable. Save in-world with the `save` command.
 
 The narrator loads `memory/AGENTS.md` at session start — a spec defining narrative
-voice, state-mutation rules, and the amnesia bootstrap.
+voice, state-mutation rules, and the amnesia bootstrap. `memory/PRINCIPLES.md` is
+injected beside it: the game-design principles that bind the narrator as referee
+and author.
 
 ## Design a World
 
