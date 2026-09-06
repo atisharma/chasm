@@ -175,6 +175,9 @@ When the player provides a name, description, or the story reveals their identit
 2. Set `location` to the current place.
 3. Set `objective` to whatever the player last declared, or leave blank.
 4. Update `WORLD_STATE.md`: `player.character: $PI_MEMORY_DIR/characters/{name}.md`.
+5. Update `WORLD_STATE.md`: set the player `condition` from `amnesiac` to
+   `normal` (revealing identity ends the amnesia; the footer shows
+   `condition` until it is no longer `amnesiac`).
 
 **After creation:** The player is a character like any other. Mutate their file normally.
 
