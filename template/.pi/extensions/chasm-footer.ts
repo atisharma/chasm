@@ -121,10 +121,16 @@ function readWorldState(): WorldState {
 
 export default function (pi: ExtensionAPI) {
     pi.on("session_start", async (_event, ctx) => {
-        ctx.ui.setToolsExpanded(false);
-        // Hidden thinking blocks render as zero lines instead of one "Thinking..."
-        // row per reasoning run (reasoning stays invisible like tool activity).
-        // Ctrl+T still reveals it (and new runs honour the toggle).
+        // Tool rows are invisible by default (chasm-tools renders nothing when
+        // collapsed). Ctrl+O toggles a session's rows; CHASM_SHOW_TOOLS=1
+        // starts with them expanded, for debugging the narrator's file work.
+        const showTools = process.env.CHASM_SHOW_TOOLS === "1";
+        ctx.ui.setToolsExpanded(showTools);
+        // Hidden thinking blocks render as zero lines instead of one
+        // "Thinking..." row per reasoning run. Ctrl+T still reveals them.
+        // Caveat: pi adds its own spacer per thinking-only message (it counts
+        // hidden thinking as visible content), so think/act cycles leave blank
+        // lines until that spacing is fixed in pi itself.
         ctx.ui.setHiddenThinkingLabel("");
         ctx.ui.setFooter((tui, theme, footerData) => {
             const unsub = footerData.onBranchChange(() => tui.requestRender());
