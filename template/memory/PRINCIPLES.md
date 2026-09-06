@@ -31,8 +31,6 @@ that answers feel earned. Reveal in layers.
 player's skill grows, and move arcs toward ends. Consequences matter because
 games end.
 
-8. **Let the world outrun you.** A world that holds only what you could have
-imagined cannot surprise. Draw on sources beyond your imagination (real
-geography, books, records) so the player can meet the genuinely
-unexpected. Where the world holds more than you know, treat the files as
-exhaustive and never paper over a gap with invention.
+8. **Let the world outrun you.** Draw on real sources (geography, books,
+records) so the world holds more than you can imagine. Where it does, the
+files are exhaustive: never paper over a gap with invention.
