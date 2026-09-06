@@ -58,12 +58,14 @@ export default function (pi: ExtensionAPI) {
         if (turnCount % 7 !== 0) return;
         if (persistedThisTurn) return;
 
-        pi.sendUserMessage(
-            "You haven't persisted any state recently. Check: has the player moved? " +
-            "Did an NPC change? Did time pass? Is the current place file up to date? " +
-            "If anything changed, write it to the relevant files now, then continue the story without comment.",
-            { deliverAs: "followUp" },
-        );
+        pi.sendMessage({
+            customType: "chasm",
+            display: false,
+            content:
+                "You haven't persisted any state recently. Check: has the player moved? " +
+                "Did an NPC change? Did time pass? Is the current place file up to date? " +
+                "If anything changed, write it to the relevant files now, then continue the story without comment.",
+        }, { deliverAs: "steer", triggerTurn: true });
     });
     // --- Auto-save after every agent turn ---
     pi.on("agent_end", async (_event, ctx) => {
@@ -141,11 +143,13 @@ export default function (pi: ExtensionAPI) {
             } catch {
                 ctx.ui.notify("Save failed", "error");
             }
-            pi.sendUserMessage(
-                "The player wants to save. Persist any pending changes to state files now, " +
-                "then continue the story without comment.",
-                { deliverAs: "steer" },
-            );
+            pi.sendMessage({
+                customType: "chasm",
+                display: false,
+                content:
+                    "The player wants to save. Persist any pending changes to state files now, " +
+                    "then continue the story without comment.",
+            }, { deliverAs: "steer", triggerTurn: true });
         },
     });
 
@@ -154,12 +158,14 @@ export default function (pi: ExtensionAPI) {
         description: "Force narrator to re-read and persist state (use when things feel stale)",
         handler: async (_args, ctx) => {
             ctx.ui.notify("Syncing state…", "info");
-            pi.sendUserMessage(
-                "Sync state now: re-read WORLD_STATE.md, your current place file, and your " +
-                "character file. If any of these are out of date, update them. If you've made " +
-                "changes this turn that aren't persisted, write them now. Then continue the story without comment.",
-                { deliverAs: "steer" },
-            );
+            pi.sendMessage({
+                customType: "chasm",
+                display: false,
+                content:
+                    "Sync state now: re-read WORLD_STATE.md, your current place file, and your " +
+                    "character file. If any of these are out of date, update them. If you've made " +
+                    "changes this turn that aren't persisted, write them now. Then continue the story without comment.",
+            }, { deliverAs: "steer", triggerTurn: true });
         },
     });
 }
