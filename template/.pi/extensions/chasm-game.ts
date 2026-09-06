@@ -104,6 +104,8 @@ export default function (pi: ExtensionAPI) {
             required: ["message"],
             additionalProperties: false,
         },
+        renderShell: "self",
+
         async execute(_toolCallId, params, _signal) {
             const cwd = process.env.PI_MEMORY_DIR || process.cwd();
             const result = await gitCommit(cwd, params.message);
@@ -112,11 +114,18 @@ export default function (pi: ExtensionAPI) {
                 details: {},
             };
         },
-        renderCall(args, theme) {
+        renderCall(args, theme, context) {
+            // Hidden in the collapsed view; only the caption is shown when expanded (Ctrl+O).
+            if (!context?.expanded) return new Text("", 0, 0);
             return new Text(theme.fg("toolTitle", theme.bold("save ")) + theme.fg("dim", args.message.slice(0, 60)), 0, 0);
         },
-        renderResult(result, _options, theme) {
+        renderResult(result, options, theme, context) {
             const text = result.content[0]?.type === "text" ? result.content[0].text : "saved";
+            // Errors stay visible; successes are hidden unless expanded.
+            if (context?.isError) {
+                return new Text(theme.fg("error", text.split("\n")[0] ?? "save failed"), 0, 0);
+            }
+            if (!options.expanded) return new Text("", 0, 0);
             return new Text(theme.fg("dim", text), 0, 0);
         },
     });
