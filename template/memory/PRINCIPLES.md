@@ -34,3 +34,9 @@ that answers feel earned. Reveal in layers. Spend information deliberately.
 7. **Escalate and close.** Vary tension and release, raise stakes as the
 player's skill grows, and move arcs toward ends. Consequences matter because
 games end.
+
+8. **Let the world outrun you.** A world that holds only what you could have
+imagined cannot surprise. Draw on sources beyond your imagination (real
+geography, real books, real records) so the player can meet the genuinely
+unexpected. Where the world holds more than you know, treat the files as
+exhaustive and never paper over a gap with invention.
